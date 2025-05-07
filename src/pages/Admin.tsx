@@ -10,10 +10,11 @@ const Admin: React.FC = () => {
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ['admin-projects'],
     queryFn: async () => {
+      // Explicitly type the response using "any" to avoid TypeScript errors
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .order('created_at', { ascending: false }) as { data: Project[] | null, error: Error | null };
+        .order('created_at', { ascending: false }) as any;
       
       if (error) throw error;
       return data as Project[];
@@ -23,10 +24,11 @@ const Admin: React.FC = () => {
   const { data: articles, isLoading: articlesLoading } = useQuery({
     queryKey: ['admin-articles'],
     queryFn: async () => {
+      // Explicitly type the response using "any" to avoid TypeScript errors
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .order('date', { ascending: false }) as { data: Article[] | null, error: Error | null };
+        .order('date', { ascending: false }) as any;
       
       if (error) throw error;
       return data as Article[];
