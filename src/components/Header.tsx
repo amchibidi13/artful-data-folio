@@ -23,6 +23,13 @@ const Header: React.FC = () => {
           <Button 
             variant="link" 
             className="text-gray-700 hover:text-data-purple"
+            onClick={() => scrollToSection('about')}
+          >
+            About
+          </Button>
+          <Button 
+            variant="link" 
+            className="text-gray-700 hover:text-data-purple"
             onClick={() => scrollToSection('projects')}
           >
             Projects
@@ -33,13 +40,6 @@ const Header: React.FC = () => {
             onClick={() => scrollToSection('articles')}
           >
             Articles
-          </Button>
-          <Button 
-            variant="link" 
-            className="text-gray-700 hover:text-data-purple"
-            onClick={() => scrollToSection('about')}
-          >
-            About
           </Button>
           <Button 
             variant="default" 
