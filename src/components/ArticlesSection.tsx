@@ -13,7 +13,7 @@ const ArticlesSection: React.FC = () => {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .order('date', { ascending: false });
+        .order('date', { ascending: false }) as { data: Article[] | null, error: Error | null };
       
       if (error) throw error;
       return data as Article[];

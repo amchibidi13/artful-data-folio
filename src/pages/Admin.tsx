@@ -13,7 +13,7 @@ const Admin: React.FC = () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as { data: Project[] | null, error: Error | null };
       
       if (error) throw error;
       return data as Project[];
@@ -26,7 +26,7 @@ const Admin: React.FC = () => {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .order('date', { ascending: false });
+        .order('date', { ascending: false }) as { data: Article[] | null, error: Error | null };
       
       if (error) throw error;
       return data as Article[];
