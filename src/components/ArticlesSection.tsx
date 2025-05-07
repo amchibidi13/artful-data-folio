@@ -1,43 +1,45 @@
 
 import React from 'react';
-import ArticleCard, { ArticleProps } from './ArticleCard';
-
-const articles: ArticleProps[] = [
-  {
-    title: "Demystifying Neural Networks: A Beginner's Guide",
-    excerpt: "A comprehensive introduction to neural networks, explaining the basic concepts without the complex math.",
-    date: "May 1, 2023",
-    readTime: "8",
-    category: "Machine Learning",
-    link: "#"
-  },
-  {
-    title: "Data Visualization Best Practices for Effective Communication",
-    excerpt: "Learn how to create impactful visualizations that effectively communicate your data insights.",
-    date: "April 15, 2023",
-    readTime: "6",
-    category: "Data Visualization",
-    link: "#"
-  },
-  {
-    title: "A/B Testing: Statistical Methods for Decision Making",
-    excerpt: "An in-depth look at statistical methods for designing and analyzing A/B tests for business decisions.",
-    date: "March 22, 2023",
-    readTime: "10",
-    category: "Statistics",
-    link: "#"
-  },
-  {
-    title: "Feature Engineering Techniques for Machine Learning Models",
-    excerpt: "Discover effective feature engineering techniques to improve your machine learning models.",
-    date: "February 10, 2023",
-    readTime: "7",
-    category: "Feature Engineering",
-    link: "#"
-  }
-];
+import ArticleCard from './ArticleCard';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Article } from '@/types/supabase-types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ArticlesSection: React.FC = () => {
+  const { data: articles, isLoading, error } = useQuery({
+    queryKey: ['articles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      return data as Article[];
+    },
+  });
+
+  // Placeholder for loading state
+  const LoadingSkeleton = () => (
+    <>
+      {[1, 2].map((i) => (
+        <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            <Skeleton className="h-7 w-full mb-4" />
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-5/6 mb-4" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+
   return (
     <section id="articles" className="py-20">
       <div className="container">
@@ -49,12 +51,35 @@ const ArticlesSection: React.FC = () => {
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8">
-          {articles.map((article, index) => (
-            <ArticleCard
-              key={index}
-              {...article}
-            />
-          ))}
+          {isLoading ? (
+            <LoadingSkeleton />
+          ) : error ? (
+            <div className="md:col-span-2 lg:col-span-2 text-center text-red-500">
+              Error loading articles. Please try again later.
+            </div>
+          ) : articles && articles.length > 0 ? (
+            <>
+              {articles.map((article) => (
+                <ArticleCard
+                  key={article.id}
+                  title={article.title}
+                  excerpt={article.excerpt}
+                  date={new Date(article.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                  readTime={article.read_time.toString()}
+                  category={article.category}
+                  link={article.link || '#'}
+                />
+              ))}
+            </>
+          ) : (
+            <div className="md:col-span-2 lg:col-span-2 text-center">
+              No articles found.
+            </div>
+          )}
         </div>
         
         <div className="flex justify-center mt-12">

@@ -1,40 +1,47 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import ProjectCard, { ProjectProps } from './ProjectCard';
-
-const projects: ProjectProps[] = [
-  {
-    title: "Customer Segmentation Analysis",
-    description: "Applied K-means clustering to segment customers based on purchasing behavior and demographics.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
-    tags: ["K-means", "Python", "Scikit-learn", "Data Visualization"],
-    link: "#"
-  },
-  {
-    title: "Natural Language Processing for Sentiment Analysis",
-    description: "Built an NLP model to analyze sentiment in customer reviews for a retail company.",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
-    tags: ["NLP", "BERT", "PyTorch", "Sentiment Analysis"],
-    link: "#"
-  },
-  {
-    title: "Time Series Forecasting for Sales Prediction",
-    description: "Implemented ARIMA and Prophet models to forecast monthly sales for a retail chain.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
-    tags: ["Time Series", "Prophet", "ARIMA", "Forecasting"],
-    link: "#"
-  },
-  {
-    title: "Image Classification with Deep Learning",
-    description: "Developed a convolutional neural network for classifying medical images.",
-    image: "https://images.unsplash.com/photo-1564865878688-9a244444042a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80",
-    tags: ["CNN", "TensorFlow", "Deep Learning", "Medical Imaging"],
-    link: "#"
-  }
-];
+import ProjectCard from './ProjectCard';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Project } from '@/types/supabase-types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ProjectsSection: React.FC = () => {
+  const { data: projects, isLoading, error } = useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Project[];
+    },
+  });
+
+  // Placeholder for loading state
+  const LoadingSkeleton = () => (
+    <>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
+          <Skeleton className="h-48 w-full" />
+          <div className="p-4">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-full mb-2" />
+            <Skeleton className="h-4 w-5/6 mb-4" />
+            <div className="flex gap-2 mb-4">
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-12" />
+            </div>
+            <Skeleton className="h-9 w-full" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+
   return (
     <section id="projects" className="py-20 bg-gray-50">
       <div className="container">
@@ -46,12 +53,30 @@ const ProjectsSection: React.FC = () => {
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project, index) => (
-            <ProjectCard
-              key={index}
-              {...project}
-            />
-          ))}
+          {isLoading ? (
+            <LoadingSkeleton />
+          ) : error ? (
+            <div className="md:col-span-2 lg:col-span-3 text-center text-red-500">
+              Error loading projects. Please try again later.
+            </div>
+          ) : projects && projects.length > 0 ? (
+            <>
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  title={project.title}
+                  description={project.description}
+                  image={project.image_url}
+                  tags={project.tags}
+                  link={project.link || '#'}
+                />
+              ))}
+            </>
+          ) : (
+            <div className="md:col-span-2 lg:col-span-3 text-center">
+              No projects found.
+            </div>
+          )}
           
           <div className="md:col-span-2 lg:col-span-3 flex justify-center mt-8">
             <a 
