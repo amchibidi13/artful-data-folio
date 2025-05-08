@@ -11,12 +11,94 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project, Article } from '@/types/supabase-types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SiteConfig, SiteContent, NavigationItem } from '@/types/database-types';
+import { SiteConfig, SiteContent, NavigationItem, UIConfig } from '@/types/database-types';
 
 const Admin: React.FC = () => {
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [credentials, setCredentials] = useState({ username: '', password: '' });
+  
+  // Content management queries - These must be at the top level of the component, not inside conditions
+  const { data: siteConfig, isLoading: configLoading } = useQuery({
+    queryKey: ['admin-site-config'],
+    queryFn: async () => {
+      if (!isAuthenticated) return [] as SiteConfig[];
+      
+      const { data, error } = await supabase
+        .from('site_config')
+        .select('*')
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data as SiteConfig[];
+    },
+    enabled: isAuthenticated, // Only run this query when authenticated
+  });
+
+  const { data: siteContent, isLoading: contentLoading } = useQuery({
+    queryKey: ['admin-site-content'],
+    queryFn: async () => {
+      if (!isAuthenticated) return [] as SiteContent[];
+      
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('*')
+        .order('section', { ascending: true })
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data as SiteContent[];
+    },
+    enabled: isAuthenticated, // Only run this query when authenticated
+  });
+
+  const { data: navigationItems, isLoading: navLoading } = useQuery({
+    queryKey: ['admin-navigation'],
+    queryFn: async () => {
+      if (!isAuthenticated) return [] as NavigationItem[];
+      
+      const { data, error } = await supabase
+        .from('navigation')
+        .select('*')
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data as NavigationItem[];
+    },
+    enabled: isAuthenticated, // Only run this query when authenticated
+  });
+
+  const { data: projects, isLoading: projectsLoading } = useQuery({
+    queryKey: ['admin-projects'],
+    queryFn: async () => {
+      if (!isAuthenticated) return [] as Project[];
+      
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Project[];
+    },
+    enabled: isAuthenticated, // Only run this query when authenticated
+  });
+
+  const { data: articles, isLoading: articlesLoading } = useQuery({
+    queryKey: ['admin-articles'],
+    queryFn: async () => {
+      if (!isAuthenticated) return [] as Article[];
+      
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      return data as Article[];
+    },
+    enabled: isAuthenticated, // Only run this query when authenticated
+  });
   
   // Login form handler
   const handleLogin = (e: React.FormEvent) => {
@@ -47,7 +129,7 @@ const Admin: React.FC = () => {
     }));
   };
 
-  // If not authenticated, show login form
+  // Render login form if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="container py-20 flex justify-center items-center min-h-screen bg-gray-50">
@@ -86,74 +168,6 @@ const Admin: React.FC = () => {
       </div>
     );
   }
-
-  // Content management queries - IMPORTANT: These are now outside any conditional rendering
-  // but inside the component, which is correct React hooks usage
-  const { data: siteConfig, isLoading: configLoading } = useQuery({
-    queryKey: ['admin-site-config'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_config')
-        .select('*')
-        .order('display_order', { ascending: true });
-      
-      if (error) throw error;
-      return data as SiteConfig[];
-    },
-  });
-
-  const { data: siteContent, isLoading: contentLoading } = useQuery({
-    queryKey: ['admin-site-content'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_content')
-        .select('*')
-        .order('section', { ascending: true })
-        .order('display_order', { ascending: true });
-      
-      if (error) throw error;
-      return data as SiteContent[];
-    },
-  });
-
-  const { data: navigationItems, isLoading: navLoading } = useQuery({
-    queryKey: ['admin-navigation'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('navigation')
-        .select('*')
-        .order('display_order', { ascending: true });
-      
-      if (error) throw error;
-      return data as NavigationItem[];
-    },
-  });
-
-  const { data: projects, isLoading: projectsLoading } = useQuery({
-    queryKey: ['admin-projects'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as Project[];
-    },
-  });
-
-  const { data: articles, isLoading: articlesLoading } = useQuery({
-    queryKey: ['admin-articles'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .order('date', { ascending: false });
-      
-      if (error) throw error;
-      return data as Article[];
-    },
-  });
 
   // Return admin dashboard UI
   return (
