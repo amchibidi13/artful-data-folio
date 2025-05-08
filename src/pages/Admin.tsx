@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,7 +15,7 @@ import { SiteConfig, SiteContent, NavigationItem } from '@/types/database-types'
 
 const Admin: React.FC = () => {
   const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   
   // Login form handler
@@ -87,14 +87,15 @@ const Admin: React.FC = () => {
     );
   }
 
-  // Content management queries
+  // Content management queries - IMPORTANT: These are now outside any conditional rendering
+  // but inside the component, which is correct React hooks usage
   const { data: siteConfig, isLoading: configLoading } = useQuery({
     queryKey: ['admin-site-config'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('site_config')
         .select('*')
-        .order('display_order', { ascending: true }) as any;
+        .order('display_order', { ascending: true });
       
       if (error) throw error;
       return data as SiteConfig[];
@@ -108,7 +109,7 @@ const Admin: React.FC = () => {
         .from('site_content')
         .select('*')
         .order('section', { ascending: true })
-        .order('display_order', { ascending: true }) as any;
+        .order('display_order', { ascending: true });
       
       if (error) throw error;
       return data as SiteContent[];
@@ -121,7 +122,7 @@ const Admin: React.FC = () => {
       const { data, error } = await supabase
         .from('navigation')
         .select('*')
-        .order('display_order', { ascending: true }) as any;
+        .order('display_order', { ascending: true });
       
       if (error) throw error;
       return data as NavigationItem[];
@@ -134,7 +135,7 @@ const Admin: React.FC = () => {
       const { data, error } = await supabase
         .from('projects')
         .select('*')
-        .order('created_at', { ascending: false }) as any;
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Project[];
@@ -147,13 +148,14 @@ const Admin: React.FC = () => {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .order('date', { ascending: false }) as any;
+        .order('date', { ascending: false });
       
       if (error) throw error;
       return data as Article[];
     },
   });
 
+  // Return admin dashboard UI
   return (
     <div className="container py-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-8">
