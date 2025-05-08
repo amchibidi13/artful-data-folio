@@ -7,16 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project, Article } from '@/types/supabase-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SiteConfig, SiteContent, NavigationItem, UIConfig } from '@/types/database-types';
+import EditModal from '@/components/admin/EditModal';
 
 const Admin: React.FC = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [credentials, setCredentials] = useState({ username: '', password: '' });
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentItemType, setCurrentItemType] = useState<'section' | 'content' | 'navigation' | 'project' | 'article'>('section');
+  const [currentItem, setCurrentItem] = useState<any>(null);
   
   // Content management queries - These must be at the top level of the component, not inside conditions
   const { data: siteConfig, isLoading: configLoading } = useQuery({
@@ -99,6 +106,112 @@ const Admin: React.FC = () => {
     },
     enabled: isAuthenticated, // Only run this query when authenticated
   });
+
+  // Mutations for adding/updating items
+  const sectionMutation = useMutation({
+    mutationFn: async (data: Partial<SiteConfig>) => {
+      if (data.id) {
+        // Update existing section
+        const { error } = await supabase
+          .from('site_config')
+          .update(data)
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new section
+        const { error } = await supabase
+          .from('site_config')
+          .insert([data]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-site-config'] });
+      toast({
+        title: currentItem ? "Section Updated" : "Section Added",
+        description: `Successfully ${currentItem ? "updated" : "added"} section.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to ${currentItem ? "update" : "add"} section: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const contentMutation = useMutation({
+    mutationFn: async (data: Partial<SiteContent>) => {
+      if (data.id) {
+        // Update existing content
+        const { error } = await supabase
+          .from('site_content')
+          .update(data)
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new content
+        const { error } = await supabase
+          .from('site_content')
+          .insert([data]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
+      toast({
+        title: currentItem ? "Content Updated" : "Content Added",
+        description: `Successfully ${currentItem ? "updated" : "added"} content.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to ${currentItem ? "update" : "add"} content: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const navigationMutation = useMutation({
+    mutationFn: async (data: Partial<NavigationItem>) => {
+      if (data.id) {
+        // Update existing navigation item
+        const { error } = await supabase
+          .from('navigation')
+          .update(data)
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new navigation item
+        const { error } = await supabase
+          .from('navigation')
+          .insert([data]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-navigation'] });
+      toast({
+        title: currentItem ? "Navigation Item Updated" : "Navigation Item Added",
+        description: `Successfully ${currentItem ? "updated" : "added"} navigation item.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to ${currentItem ? "update" : "add"} navigation item: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
   
   // Login form handler
   const handleLogin = (e: React.FormEvent) => {
@@ -127,6 +240,70 @@ const Admin: React.FC = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Open modal for adding a new item
+  const handleAddNew = (itemType: 'section' | 'content' | 'navigation' | 'project' | 'article') => {
+    setCurrentItemType(itemType);
+    setCurrentItem(null); // No existing item for add new
+    
+    // Set default values based on item type
+    let defaultValues = {};
+    switch (itemType) {
+      case 'section':
+        defaultValues = {
+          section_name: '',
+          display_order: 0,
+          is_visible: true,
+          layout_type: 'default'
+        };
+        break;
+      case 'content':
+        defaultValues = {
+          section: '',
+          content_type: '',
+          content: '',
+          display_order: 0,
+          is_visible: true
+        };
+        break;
+      case 'navigation':
+        defaultValues = {
+          label: '',
+          target_section: '',
+          display_order: 0,
+          button_type: 'link',
+          is_visible: true
+        };
+        break;
+      // Add other item types as needed
+    }
+    
+    setCurrentItem(defaultValues);
+    setModalOpen(true);
+  };
+
+  // Open modal for editing an existing item
+  const handleEdit = (itemType: 'section' | 'content' | 'navigation' | 'project' | 'article', item: any) => {
+    setCurrentItemType(itemType);
+    setCurrentItem(item);
+    setModalOpen(true);
+  };
+
+  // Handle form submission
+  const handleSubmit = (data: any) => {
+    switch (currentItemType) {
+      case 'section':
+        sectionMutation.mutate(currentItem?.id ? {...data, id: currentItem.id} : data);
+        break;
+      case 'content':
+        contentMutation.mutate(currentItem?.id ? {...data, id: currentItem.id} : data);
+        break;
+      case 'navigation':
+        navigationMutation.mutate(currentItem?.id ? {...data, id: currentItem.id} : data);
+        break;
+      // Add other item types as needed
+    }
   };
 
   // Render login form if not authenticated
@@ -237,7 +414,14 @@ const Admin: React.FC = () => {
                         <TableCell>{section.layout_type}</TableCell>
                         <TableCell>{section.is_visible ? 'Visible' : 'Hidden'}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" className="mr-2">Edit</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mr-2"
+                            onClick={() => handleEdit('section', section)}
+                          >
+                            Edit
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -249,7 +433,7 @@ const Admin: React.FC = () => {
                 </TableBody>
               </Table>
               <div className="mt-4">
-                <Button>Add New Section</Button>
+                <Button onClick={() => handleAddNew('section')}>Add New Section</Button>
               </div>
             </CardContent>
           </Card>
@@ -299,7 +483,14 @@ const Admin: React.FC = () => {
                         </TableCell>
                         <TableCell>{content.display_order}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" className="mr-2">Edit</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mr-2"
+                            onClick={() => handleEdit('content', content)}
+                          >
+                            Edit
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -311,7 +502,7 @@ const Admin: React.FC = () => {
                 </TableBody>
               </Table>
               <div className="mt-4">
-                <Button>Add New Content</Button>
+                <Button onClick={() => handleAddNew('content')}>Add New Content</Button>
               </div>
             </CardContent>
           </Card>
@@ -359,7 +550,14 @@ const Admin: React.FC = () => {
                         <TableCell>{item.button_type}</TableCell>
                         <TableCell>{item.is_visible ? 'Visible' : 'Hidden'}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" className="mr-2">Edit</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mr-2"
+                            onClick={() => handleEdit('navigation', item)}
+                          >
+                            Edit
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -371,7 +569,7 @@ const Admin: React.FC = () => {
                 </TableBody>
               </Table>
               <div className="mt-4">
-                <Button>Add Navigation Item</Button>
+                <Button onClick={() => handleAddNew('navigation')}>Add Navigation Item</Button>
               </div>
             </CardContent>
           </Card>
@@ -417,7 +615,14 @@ const Admin: React.FC = () => {
                         <TableCell>{project.tags.join(', ')}</TableCell>
                         <TableCell>{new Date(project.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" className="mr-2">Edit</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mr-2"
+                            onClick={() => handleEdit('project', project)}
+                          >
+                            Edit
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -429,7 +634,7 @@ const Admin: React.FC = () => {
                 </TableBody>
               </Table>
               <div className="mt-4">
-                <Button>Add New Project</Button>
+                <Button onClick={() => handleAddNew('project')}>Add New Project</Button>
               </div>
             </CardContent>
           </Card>
@@ -475,7 +680,14 @@ const Admin: React.FC = () => {
                         <TableCell>{article.read_time} min</TableCell>
                         <TableCell>{new Date(article.date).toLocaleDateString()}</TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" className="mr-2">Edit</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="mr-2"
+                            onClick={() => handleEdit('article', article)}
+                          >
+                            Edit
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -487,12 +699,21 @@ const Admin: React.FC = () => {
                 </TableBody>
               </Table>
               <div className="mt-4">
-                <Button>Add New Article</Button>
+                <Button onClick={() => handleAddNew('article')}>Add New Article</Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Modal */}
+      <EditModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        itemType={currentItemType}
+        itemData={currentItem}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 };

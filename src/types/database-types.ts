@@ -48,3 +48,11 @@ export interface AdminUser {
   created_at: string;
   updated_at: string;
 }
+
+export interface EditModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  itemType: 'section' | 'content' | 'navigation' | 'project' | 'article';
+  itemData?: any;
+  onSubmit: (data: any) => void;
+}
