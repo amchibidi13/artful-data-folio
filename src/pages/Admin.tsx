@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project, Article } from '@/types/supabase-types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SiteConfig, SiteContent, NavigationItem, UIConfig } from '@/types/database-types';
+import { SiteConfig, SiteContent, NavigationItem, SiteConfigInsert, SiteContentInsert, NavigationItemInsert } from '@/types/database-types';
 import EditModal from '@/components/admin/EditModal';
 
 const Admin: React.FC = () => {
@@ -109,7 +108,7 @@ const Admin: React.FC = () => {
 
   // Mutations for adding/updating items
   const sectionMutation = useMutation({
-    mutationFn: async (data: Partial<SiteConfig>) => {
+    mutationFn: async (data: SiteConfigInsert) => {
       if (data.id) {
         // Update existing section
         const { error } = await supabase
@@ -119,10 +118,15 @@ const Admin: React.FC = () => {
         
         if (error) throw error;
       } else {
-        // Add new section
+        // Add new section - ensure section_name is provided
+        if (!data.section_name) {
+          throw new Error("Section name is required");
+        }
+        
+        // Insert with explicit typing to ensure required fields are provided
         const { error } = await supabase
           .from('site_config')
-          .insert([data]);
+          .insert([data as SiteConfigInsert]);
         
         if (error) throw error;
       }
@@ -144,7 +148,7 @@ const Admin: React.FC = () => {
   });
 
   const contentMutation = useMutation({
-    mutationFn: async (data: Partial<SiteContent>) => {
+    mutationFn: async (data: SiteContentInsert) => {
       if (data.id) {
         // Update existing content
         const { error } = await supabase
@@ -154,10 +158,15 @@ const Admin: React.FC = () => {
         
         if (error) throw error;
       } else {
-        // Add new content
+        // Add new content - ensure required fields are provided
+        if (!data.section || !data.content_type || !data.content) {
+          throw new Error("Section, content type, and content are required");
+        }
+        
+        // Insert with explicit typing to ensure required fields are provided
         const { error } = await supabase
           .from('site_content')
-          .insert([data]);
+          .insert([data as SiteContentInsert]);
         
         if (error) throw error;
       }
@@ -179,7 +188,7 @@ const Admin: React.FC = () => {
   });
 
   const navigationMutation = useMutation({
-    mutationFn: async (data: Partial<NavigationItem>) => {
+    mutationFn: async (data: NavigationItemInsert) => {
       if (data.id) {
         // Update existing navigation item
         const { error } = await supabase
@@ -189,10 +198,15 @@ const Admin: React.FC = () => {
         
         if (error) throw error;
       } else {
-        // Add new navigation item
+        // Add new navigation item - ensure required fields are provided
+        if (!data.label || !data.target_section) {
+          throw new Error("Label and target section are required");
+        }
+        
+        // Insert with explicit typing to ensure required fields are provided
         const { error } = await supabase
           .from('navigation')
-          .insert([data]);
+          .insert([data as NavigationItemInsert]);
         
         if (error) throw error;
       }
@@ -294,19 +308,19 @@ const Admin: React.FC = () => {
   const handleSubmit = (data: any) => {
     switch (currentItemType) {
       case 'section':
-        sectionMutation.mutate(currentItem?.id ? {...data, id: currentItem.id} : data);
+        sectionMutation.mutate(data as SiteConfigInsert);
         break;
       case 'content':
-        contentMutation.mutate(currentItem?.id ? {...data, id: currentItem.id} : data);
+        contentMutation.mutate(data as SiteContentInsert);
         break;
       case 'navigation':
-        navigationMutation.mutate(currentItem?.id ? {...data, id: currentItem.id} : data);
+        navigationMutation.mutate(data as NavigationItemInsert);
         break;
       // Add other item types as needed
     }
+    setModalOpen(false);
   };
 
-  // Render login form if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="container py-20 flex justify-center items-center min-h-screen bg-gray-50">
