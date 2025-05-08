@@ -30,3 +30,21 @@ export interface NavigationItem {
   created_at: string;
   updated_at: string;
 }
+
+export interface UIConfig {
+  id: string;
+  component: string;
+  attribute: string;
+  value: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminUser {
+  username: string;
+  password_hash: string;
+  last_login: string | null;
+  created_at: string;
+  updated_at: string;
+}

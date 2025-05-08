@@ -5,7 +5,10 @@
       "colors": {
         "data-purple": "#8b5cf6",
         "data-indigo": "#6366f1",
-        "data-blue": "#3b82f6"
+        "data-blue": "#3b82f6",
+        "admin-gray": "#f1f0fb",
+        "admin-purple-light": "#e5deff",
+        "admin-purple-dark": "#6E59A5"
       }
     }
   }
