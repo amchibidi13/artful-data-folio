@@ -1,14 +1,28 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { useNavigationItems } from '@/hooks/useSiteData';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Header: React.FC = () => {
+  const { data: navigationItems, isLoading } = useNavigationItems();
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  // Loading skeleton for navigation
+  const NavSkeleton = () => (
+    <>
+      <Skeleton className="h-10 w-16" />
+      <Skeleton className="h-10 w-16" />
+      <Skeleton className="h-10 w-16" />
+      <Skeleton className="h-10 w-32" />
+    </>
+  );
 
   return (
     <header className="w-full py-4 border-b border-gray-100 bg-white/80 backdrop-blur-sm fixed top-0 z-10">
@@ -20,34 +34,30 @@ const Header: React.FC = () => {
           <span className="font-semibold text-lg">DataFolio</span>
         </div>
         <nav className="hidden md:flex gap-6 items-center">
-          <Button 
-            variant="link" 
-            className="text-gray-700 hover:text-data-purple"
-            onClick={() => scrollToSection('about')}
-          >
-            About
-          </Button>
-          <Button 
-            variant="link" 
-            className="text-gray-700 hover:text-data-purple"
-            onClick={() => scrollToSection('projects')}
-          >
-            Projects
-          </Button>
-          <Button 
-            variant="link" 
-            className="text-gray-700 hover:text-data-purple"
-            onClick={() => scrollToSection('articles')}
-          >
-            Articles
-          </Button>
-          <Button 
-            variant="default" 
-            className="bg-data-purple hover:bg-data-indigo"
-            onClick={() => scrollToSection('contact')}
-          >
-            Contact
-          </Button>
+          {isLoading ? (
+            <NavSkeleton />
+          ) : navigationItems && navigationItems.length > 0 ? (
+            navigationItems.map((item) => (
+              <Button 
+                key={item.id}
+                variant={item.button_type as "link" | "default"}
+                className={item.button_type === 'default' ? 
+                  "bg-data-purple hover:bg-data-indigo" : 
+                  "text-gray-700 hover:text-data-purple"}
+                onClick={() => scrollToSection(item.target_section)}
+              >
+                {item.label}
+              </Button>
+            ))
+          ) : (
+            // Fallback if no items are returned
+            <>
+              <Button variant="link" className="text-gray-700 hover:text-data-purple" onClick={() => scrollToSection('projects')}>Projects</Button>
+              <Button variant="link" className="text-gray-700 hover:text-data-purple" onClick={() => scrollToSection('articles')}>Articles</Button>
+              <Button variant="link" className="text-gray-700 hover:text-data-purple" onClick={() => scrollToSection('about')}>About</Button>
+              <Button variant="default" className="bg-data-purple hover:bg-data-indigo" onClick={() => scrollToSection('contact')}>Contact</Button>
+            </>
+          )}
         </nav>
         
         <Button variant="outline" size="icon" className="md:hidden">

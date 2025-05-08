@@ -48,6 +48,39 @@ export type Database = {
         }
         Relationships: []
       }
+      navigation: {
+        Row: {
+          button_type: string
+          created_at: string
+          display_order: number
+          id: string
+          is_visible: boolean
+          label: string
+          target_section: string
+          updated_at: string
+        }
+        Insert: {
+          button_type?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          label: string
+          target_section: string
+          updated_at?: string
+        }
+        Update: {
+          button_type?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          label?: string
+          target_section?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           created_at: string
@@ -77,6 +110,69 @@ export type Database = {
           link?: string | null
           tags?: string[]
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_config: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_visible: boolean
+          layout_type: string
+          section_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          layout_type?: string
+          section_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          layout_type?: string
+          section_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_content: {
+        Row: {
+          content: string
+          content_type: string
+          created_at: string
+          display_order: number
+          id: string
+          is_visible: boolean
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          content_type: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          section: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          content_type?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          section?: string
           updated_at?: string
         }
         Relationships: []
