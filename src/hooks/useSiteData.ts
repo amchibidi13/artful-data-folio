@@ -84,9 +84,9 @@ export const getListContent = (
 export const getStyledContent = (
   contents: SiteContent[] | undefined,
   type: string
-): { content: string, style: { [key: string]: string | number | boolean } } => {
+): { content: string, style: StyleObject } => {
   const content = getContentByType(contents, type);
-  let style: { [key: string]: string | number | boolean } = {};
+  let style: StyleObject = {};
   
   const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
   if (styleContent) {
@@ -98,4 +98,9 @@ export const getStyledContent = (
   }
   
   return { content, style };
+};
+
+// Define a concrete type for style objects to prevent recursive type definitions
+type StyleObject = {
+  [key: string]: string | number | boolean | null;
 };
