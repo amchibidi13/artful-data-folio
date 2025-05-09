@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Project, Article } from '@/types/supabase-types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SiteConfig, SiteContent, NavigationItem, SiteConfigInsert, SiteContentInsert, NavigationItemInsert } from '@/types/database-types';
+import { SiteConfig, SiteContent, NavigationItem, SiteConfigInsert, SiteContentInsert, NavigationItemInsert, ProjectInsert, ArticleInsert } from '@/types/database-types';
 import EditModal from '@/components/admin/EditModal';
 
 const Admin: React.FC = () => {
@@ -118,30 +119,26 @@ const Admin: React.FC = () => {
         
         if (error) throw error;
       } else {
-        // Add new section - ensure section_name is provided
-        if (!data.section_name) {
-          throw new Error("Section name is required");
-        }
-        
-        // Insert with explicit typing to ensure required fields are provided
+        // Add new section
         const { error } = await supabase
           .from('site_config')
-          .insert([data as SiteConfigInsert]);
+          .insert([data]);
         
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-site-config'] });
+      queryClient.invalidateQueries({ queryKey: ['site-config'] }); // Invalidate frontend query
       toast({
-        title: currentItem ? "Section Updated" : "Section Added",
-        description: `Successfully ${currentItem ? "updated" : "added"} section.`,
+        title: currentItem?.id ? "Section Updated" : "Section Added",
+        description: `Successfully ${currentItem?.id ? "updated" : "added"} section.`,
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to ${currentItem ? "update" : "add"} section: ${error.message}`,
+        description: `Failed to ${currentItem?.id ? "update" : "add"} section: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -158,30 +155,26 @@ const Admin: React.FC = () => {
         
         if (error) throw error;
       } else {
-        // Add new content - ensure required fields are provided
-        if (!data.section || !data.content_type || !data.content) {
-          throw new Error("Section, content type, and content are required");
-        }
-        
-        // Insert with explicit typing to ensure required fields are provided
+        // Add new content
         const { error } = await supabase
           .from('site_content')
-          .insert([data as SiteContentInsert]);
+          .insert([data]);
         
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
+      queryClient.invalidateQueries({ queryKey: ['site-content'] }); // Invalidate frontend query
       toast({
-        title: currentItem ? "Content Updated" : "Content Added",
-        description: `Successfully ${currentItem ? "updated" : "added"} content.`,
+        title: currentItem?.id ? "Content Updated" : "Content Added",
+        description: `Successfully ${currentItem?.id ? "updated" : "added"} content.`,
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to ${currentItem ? "update" : "add"} content: ${error.message}`,
+        description: `Failed to ${currentItem?.id ? "update" : "add"} content: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -198,30 +191,100 @@ const Admin: React.FC = () => {
         
         if (error) throw error;
       } else {
-        // Add new navigation item - ensure required fields are provided
-        if (!data.label || !data.target_section) {
-          throw new Error("Label and target section are required");
-        }
-        
-        // Insert with explicit typing to ensure required fields are provided
+        // Add new navigation item
         const { error } = await supabase
           .from('navigation')
-          .insert([data as NavigationItemInsert]);
+          .insert([data]);
         
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-navigation'] });
+      queryClient.invalidateQueries({ queryKey: ['navigation'] }); // Invalidate frontend query
       toast({
-        title: currentItem ? "Navigation Item Updated" : "Navigation Item Added",
-        description: `Successfully ${currentItem ? "updated" : "added"} navigation item.`,
+        title: currentItem?.id ? "Navigation Item Updated" : "Navigation Item Added",
+        description: `Successfully ${currentItem?.id ? "updated" : "added"} navigation item.`,
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: `Failed to ${currentItem ? "update" : "add"} navigation item: ${error.message}`,
+        description: `Failed to ${currentItem?.id ? "update" : "add"} navigation item: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Add project mutation
+  const projectMutation = useMutation({
+    mutationFn: async (data: ProjectInsert) => {
+      if (data.id) {
+        // Update existing project
+        const { error } = await supabase
+          .from('projects')
+          .update(data)
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new project
+        const { error } = await supabase
+          .from('projects')
+          .insert([data]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] }); // Invalidate frontend query
+      toast({
+        title: currentItem?.id ? "Project Updated" : "Project Added",
+        description: `Successfully ${currentItem?.id ? "updated" : "added"} project.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to ${currentItem?.id ? "update" : "add"} project: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Add article mutation
+  const articleMutation = useMutation({
+    mutationFn: async (data: ArticleInsert) => {
+      if (data.id) {
+        // Update existing article
+        const { error } = await supabase
+          .from('articles')
+          .update(data)
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new article
+        const { error } = await supabase
+          .from('articles')
+          .insert([data]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-articles'] });
+      queryClient.invalidateQueries({ queryKey: ['articles'] }); // Invalidate frontend query
+      toast({
+        title: currentItem?.id ? "Article Updated" : "Article Added",
+        description: `Successfully ${currentItem?.id ? "updated" : "added"} article.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to ${currentItem?.id ? "update" : "add"} article: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -260,40 +323,6 @@ const Admin: React.FC = () => {
   const handleAddNew = (itemType: 'section' | 'content' | 'navigation' | 'project' | 'article') => {
     setCurrentItemType(itemType);
     setCurrentItem(null); // No existing item for add new
-    
-    // Set default values based on item type
-    let defaultValues = {};
-    switch (itemType) {
-      case 'section':
-        defaultValues = {
-          section_name: '',
-          display_order: 0,
-          is_visible: true,
-          layout_type: 'default'
-        };
-        break;
-      case 'content':
-        defaultValues = {
-          section: '',
-          content_type: '',
-          content: '',
-          display_order: 0,
-          is_visible: true
-        };
-        break;
-      case 'navigation':
-        defaultValues = {
-          label: '',
-          target_section: '',
-          display_order: 0,
-          button_type: 'link',
-          is_visible: true
-        };
-        break;
-      // Add other item types as needed
-    }
-    
-    setCurrentItem(defaultValues);
     setModalOpen(true);
   };
 
@@ -306,19 +335,32 @@ const Admin: React.FC = () => {
 
   // Handle form submission
   const handleSubmit = (data: any) => {
-    switch (currentItemType) {
-      case 'section':
-        sectionMutation.mutate(data as SiteConfigInsert);
-        break;
-      case 'content':
-        contentMutation.mutate(data as SiteContentInsert);
-        break;
-      case 'navigation':
-        navigationMutation.mutate(data as NavigationItemInsert);
-        break;
-      // Add other item types as needed
+    try {
+      switch (currentItemType) {
+        case 'section':
+          sectionMutation.mutate(data as SiteConfigInsert);
+          break;
+        case 'content':
+          contentMutation.mutate(data as SiteContentInsert);
+          break;
+        case 'navigation':
+          navigationMutation.mutate(data as NavigationItemInsert);
+          break;
+        case 'project':
+          projectMutation.mutate(data as ProjectInsert);
+          break;
+        case 'article':
+          articleMutation.mutate(data as ArticleInsert);
+          break;
+      }
+      setModalOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Validation Error",
+        description: error.message || "Please check all required fields",
+        variant: "destructive",
+      });
     }
-    setModalOpen(false);
   };
 
   if (!isAuthenticated) {

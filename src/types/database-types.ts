@@ -89,3 +89,27 @@ export interface NavigationItemInsert {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface ProjectInsert {
+  id?: string;
+  title: string;
+  description: string;
+  image_url: string;
+  tags: string[];
+  link?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ArticleInsert {
+  id?: string;
+  title: string;
+  category: string;
+  excerpt: string;
+  content: string;
+  read_time?: number;
+  date?: string;
+  link?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
