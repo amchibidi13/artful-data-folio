@@ -80,6 +80,11 @@ export const getListContent = (
   return content ? content.split(',').map(item => item.trim()) : [];
 };
 
+// Define a concrete type for style objects to prevent recursive type definitions
+type StyleObject = {
+  [key: string]: string | number | boolean | null;
+};
+
 // Helper function to get styled content
 export const getStyledContent = (
   contents: SiteContent[] | undefined,
@@ -91,16 +96,11 @@ export const getStyledContent = (
   const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
   if (styleContent) {
     try {
-      style = JSON.parse(styleContent);
+      style = JSON.parse(styleContent) as StyleObject;
     } catch (e) {
       console.error('Could not parse style:', e);
     }
   }
   
   return { content, style };
-};
-
-// Define a concrete type for style objects to prevent recursive type definitions
-type StyleObject = {
-  [key: string]: string | number | boolean | null;
 };
