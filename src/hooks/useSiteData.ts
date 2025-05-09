@@ -5,7 +5,7 @@ import { SiteConfig, SiteContent, NavigationItem } from '@/types/database-types'
 
 // Define a concrete type for style objects to prevent recursive type definitions
 interface StyleObject {
-  [key: string]: string | number | boolean | null;
+  [key: string]: string | number | boolean | StyleObject | null;
 }
 
 export const useSiteConfig = (page?: string) => {
@@ -89,14 +89,14 @@ export const getListContent = (
 export const getStyledContent = (
   contents: SiteContent[] | undefined,
   type: string
-): { content: string, style: StyleObject } => {
+): { content: string, style: Record<string, any> } => {
   const content = getContentByType(contents, type);
-  let style: StyleObject = {};
+  let style: Record<string, any> = {};
   
   const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
   if (styleContent) {
     try {
-      style = JSON.parse(styleContent) as StyleObject;
+      style = JSON.parse(styleContent) as Record<string, any>;
     } catch (e) {
       console.error('Could not parse style:', e);
     }
