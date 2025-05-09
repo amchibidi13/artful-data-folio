@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea"; // Import Textarea from the correct location
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -104,7 +106,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
     }
     
     // For content items, extract style if it exists
-    if (itemType === 'content' && itemData.content_type.endsWith('_style')) {
+    if (itemType === 'content' && itemData.content_type && itemData.content_type.endsWith('_style')) {
       try {
         const styleContent = JSON.parse(itemData.content);
         setContentStyles(styleContent);
@@ -131,11 +133,17 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
       // Also reset content styles
       if (itemType === 'content' && itemData?.content_type === 'content') {
         try {
-          const styleContent = siteConfig?.find(s => 
-            s.section_name === itemData.section
-          )?.content_type === 'content_style' ? 
-            JSON.parse(itemData.content_style || '{}') : {};
-          setContentStyles(styleContent);
+          // Fixed this issue - content_type doesn't exist on SiteConfig
+          const sectionName = itemData.section;
+          const styleContent = siteContent?.find(s => 
+            s.section === sectionName && s.content_type === 'content_style'
+          )?.content;
+          
+          if (styleContent) {
+            setContentStyles(JSON.parse(styleContent));
+          } else {
+            setContentStyles({});
+          }
         } catch (e) {
           console.log('Could not parse style:', e);
           setContentStyles({});
@@ -144,7 +152,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
         setContentStyles({});
       }
     }
-  }, [form, processedItemData, isOpen, itemType, itemData, siteConfig]);
+  }, [form, processedItemData, isOpen, itemType, itemData]);
 
   // Handle form submission
   const handleSubmit = (data: any) => {

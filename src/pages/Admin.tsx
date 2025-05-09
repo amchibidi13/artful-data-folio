@@ -14,6 +14,27 @@ import EditModal from '@/components/admin/EditModal';
 import DeleteConfirmDialog from '@/components/admin/DeleteConfirmDialog';
 import { Project, Article } from '@/types/supabase-types';
 
+// Table name type to ensure we only use valid table names
+type TableName = 'site_config' | 'site_content' | 'navigation' | 'projects' | 'articles';
+
+// Map item types to table names
+const getTableName = (itemType: 'section' | 'content' | 'navigation' | 'project' | 'article'): TableName => {
+  switch (itemType) {
+    case 'section':
+      return 'site_config';
+    case 'content':
+      return 'site_content';
+    case 'navigation':
+      return 'navigation';
+    case 'project':
+      return 'projects';
+    case 'article':
+      return 'articles';
+    default:
+      throw new Error('Invalid item type');
+  }
+};
+
 const Admin: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -113,28 +134,8 @@ const Admin: React.FC = () => {
 
   // Mutations for deleting items
   const deleteMutation = useMutation({
-    mutationFn: async ({ itemType, id }: { itemType: string, id: string }) => {
-      let tableName = '';
-      
-      switch (itemType) {
-        case 'section':
-          tableName = 'site_config';
-          break;
-        case 'content':
-          tableName = 'site_content';
-          break;
-        case 'navigation':
-          tableName = 'navigation';
-          break;
-        case 'project':
-          tableName = 'projects';
-          break;
-        case 'article':
-          tableName = 'articles';
-          break;
-      }
-      
-      if (!tableName) throw new Error('Invalid item type');
+    mutationFn: async ({ itemType, id }: { itemType: 'section' | 'content' | 'navigation' | 'project' | 'article', id: string }) => {
+      const tableName = getTableName(itemType);
       
       const { error } = await supabase
         .from(tableName)
@@ -182,6 +183,7 @@ const Admin: React.FC = () => {
     }
   });
   
+
   // Mutations for adding/updating items
   const sectionMutation = useMutation({
     mutationFn: async (data: SiteConfigInsert) => {

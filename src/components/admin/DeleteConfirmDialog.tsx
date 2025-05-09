@@ -27,7 +27,9 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   description
 }) => {
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <AlertDialog open={isOpen} onOpenChange={(open) => {
+      if (!open) onClose();
+    }}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

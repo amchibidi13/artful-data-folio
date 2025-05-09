@@ -16,7 +16,7 @@ export const useSiteConfig = (page?: string) => {
         query = query.eq('page', page);
       }
       
-      const { data, error } = await query as any;
+      const { data, error } = await query;
       
       if (error) throw error;
       return data as SiteConfig[];
@@ -37,7 +37,7 @@ export const useSiteContent = (section?: string) => {
         query = query.eq('section', section);
       }
       
-      const { data, error } = await query as any;
+      const { data, error } = await query;
       
       if (error) throw error;
       return data as SiteContent[];
@@ -53,7 +53,7 @@ export const useNavigationItems = () => {
         .from('navigation')
         .select('*')
         .eq('is_visible', true)
-        .order('display_order', { ascending: true }) as any;
+        .order('display_order', { ascending: true });
       
       if (error) throw error;
       return data as NavigationItem[];
