@@ -81,6 +81,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pages: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_system_page: boolean
+          is_visible: boolean
+          page_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_system_page?: boolean
+          is_visible?: boolean
+          page_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_system_page?: boolean
+          is_visible?: boolean
+          page_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           created_at: string
@@ -116,29 +146,38 @@ export type Database = {
       }
       site_config: {
         Row: {
+          background_color: string | null
+          background_image: string | null
           created_at: string
           display_order: number
           id: string
           is_visible: boolean
           layout_type: string
+          page: string | null
           section_name: string
           updated_at: string
         }
         Insert: {
+          background_color?: string | null
+          background_image?: string | null
           created_at?: string
           display_order?: number
           id?: string
           is_visible?: boolean
           layout_type?: string
+          page?: string | null
           section_name: string
           updated_at?: string
         }
         Update: {
+          background_color?: string | null
+          background_image?: string | null
           created_at?: string
           display_order?: number
           id?: string
           is_visible?: boolean
           layout_type?: string
+          page?: string | null
           section_name?: string
           updated_at?: string
         }
@@ -150,6 +189,7 @@ export type Database = {
           content_type: string
           created_at: string
           display_order: number
+          field_type: string | null
           id: string
           is_visible: boolean
           section: string
@@ -160,6 +200,7 @@ export type Database = {
           content_type: string
           created_at?: string
           display_order?: number
+          field_type?: string | null
           id?: string
           is_visible?: boolean
           section: string
@@ -170,6 +211,7 @@ export type Database = {
           content_type?: string
           created_at?: string
           display_order?: number
+          field_type?: string | null
           id?: string
           is_visible?: boolean
           section?: string

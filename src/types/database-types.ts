@@ -1,3 +1,4 @@
+
 export interface SiteConfig {
   id: string;
   section_name: string;
@@ -7,6 +8,8 @@ export interface SiteConfig {
   created_at: string;
   updated_at: string;
   page?: string;
+  background_color?: string | null;
+  background_image?: string | null;
 }
 
 export interface SiteContent {
@@ -18,6 +21,7 @@ export interface SiteContent {
   is_visible: boolean;
   created_at: string;
   updated_at: string;
+  field_type?: string | null;
 }
 
 export interface NavigationItem {
@@ -57,6 +61,16 @@ export interface EditModalProps {
   onSubmit: (data: any) => void;
 }
 
+export interface Page {
+  id: string;
+  page_name: string;
+  display_order: number;
+  is_visible: boolean;
+  is_system_page: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // New interfaces for insert operations
 export interface SiteConfigInsert {
   id?: string;
@@ -67,6 +81,8 @@ export interface SiteConfigInsert {
   created_at?: string;
   updated_at?: string;
   page?: string;
+  background_color?: string | null;
+  background_image?: string | null;
 }
 
 export interface SiteContentInsert {
@@ -74,6 +90,7 @@ export interface SiteContentInsert {
   section: string;
   content_type: string;
   content: string;
+  field_type?: string | null;
   display_order?: number;
   is_visible?: boolean;
   created_at?: string;
@@ -111,6 +128,16 @@ export interface ArticleInsert {
   read_time?: number;
   date?: string;
   link?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PageInsert {
+  id?: string;
+  page_name: string;
+  display_order?: number;
+  is_visible?: boolean;
+  is_system_page?: boolean;
   created_at?: string;
   updated_at?: string;
 }
