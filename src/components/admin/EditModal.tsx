@@ -7,17 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea"; // Import Textarea from the correct location
+import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { EditModalProps } from '@/types/database-types';
-import { useSiteConfig } from '@/hooks/useSiteData';
+import { useSiteConfig, useSiteContent } from '@/hooks/useSiteData';
 import StyledTextEditor from './StyledTextEditor';
 
 const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemData, onSubmit }) => {
   // Get site config for section selection
   const { data: siteConfig } = useSiteConfig();
+  // Get site content for styles
+  const { data: siteContentData } = useSiteContent();
   
   // Add state for styles
   const [contentStyles, setContentStyles] = useState<Record<string, any>>({});
@@ -133,9 +135,8 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
       // Also reset content styles
       if (itemType === 'content' && itemData?.content_type === 'content') {
         try {
-          // Fixed this issue - content_type doesn't exist on SiteConfig
           const sectionName = itemData.section;
-          const styleContent = siteContent?.find(s => 
+          const styleContent = siteContentData?.find(s => 
             s.section === sectionName && s.content_type === 'content_style'
           )?.content;
           
@@ -152,7 +153,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
         setContentStyles({});
       }
     }
-  }, [form, processedItemData, isOpen, itemType, itemData]);
+  }, [form, processedItemData, isOpen, itemType, itemData, siteContentData]);
 
   // Handle form submission
   const handleSubmit = (data: any) => {

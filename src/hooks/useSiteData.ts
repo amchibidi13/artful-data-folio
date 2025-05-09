@@ -77,16 +77,16 @@ export const getListContent = (
   type: string
 ): string[] => {
   const content = getContentByType(contents, type);
-  return content ? content.split(',') : [];
+  return content ? content.split(',').map(item => item.trim()) : [];
 };
 
 // Helper function to get styled content
 export const getStyledContent = (
   contents: SiteContent[] | undefined,
   type: string
-): { content: string, style: any } => {
+): { content: string, style: Record<string, any> } => {
   const content = getContentByType(contents, type);
-  let style = {};
+  let style: Record<string, any> = {};
   
   const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
   if (styleContent) {
