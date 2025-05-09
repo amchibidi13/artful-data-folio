@@ -3,11 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SiteConfig, SiteContent, NavigationItem } from '@/types/database-types';
 
-// Define a concrete type for style objects to prevent recursive type definitions
-interface StyleObject {
-  [key: string]: string | number | boolean | StyleObject | null;
-}
-
 export const useSiteConfig = (page?: string) => {
   return useQuery({
     queryKey: ['site-config', page],
@@ -96,7 +91,7 @@ export const getStyledContent = (
   const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
   if (styleContent) {
     try {
-      style = JSON.parse(styleContent) as Record<string, any>;
+      style = JSON.parse(styleContent);
     } catch (e) {
       console.error('Could not parse style:', e);
     }
