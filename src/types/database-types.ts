@@ -1,4 +1,3 @@
-
 export interface SiteConfig {
   id: string;
   section_name: string;
@@ -7,6 +6,7 @@ export interface SiteConfig {
   layout_type: string;
   created_at: string;
   updated_at: string;
+  page?: string;
 }
 
 export interface SiteContent {
@@ -66,6 +66,7 @@ export interface SiteConfigInsert {
   layout_type?: string;
   created_at?: string;
   updated_at?: string;
+  page?: string;
 }
 
 export interface SiteContentInsert {

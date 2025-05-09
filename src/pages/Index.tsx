@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { useSiteConfig } from '@/hooks/useSiteData';
+import React, { useEffect } from 'react';
+import { useSiteConfig, useSiteContent } from '@/hooks/useSiteData';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import ProjectsSection from '@/components/ProjectsSection';
@@ -9,17 +8,20 @@ import AboutSection from '@/components/AboutSection';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import { Skeleton } from '@/components/ui/skeleton';
+import GenericSection from '@/components/GenericSection';
+import { useToast } from '@/hooks/use-toast';
 
 const Index: React.FC = () => {
   const { data: siteConfig, isLoading } = useSiteConfig();
+  const { toast } = useToast();
 
   // Map section names to components
-  const sectionComponents: Record<string, React.ReactNode> = {
-    'hero': <HeroSection />,
-    'about': <AboutSection />,
-    'projects': <ProjectsSection />,
-    'articles': <ArticlesSection />,
-    'contact': <ContactSection />
+  const sectionComponents: Record<string, (props: { sectionName: string }) => React.ReactNode> = {
+    'hero': ({ sectionName }) => <HeroSection key={sectionName} />,
+    'about': ({ sectionName }) => <AboutSection key={sectionName} />,
+    'projects': ({ sectionName }) => <ProjectsSection key={sectionName} />,
+    'articles': ({ sectionName }) => <ArticlesSection key={sectionName} />,
+    'contact': ({ sectionName }) => <ContactSection key={sectionName} />
   };
 
   // Loading skeleton for sections
@@ -42,6 +44,12 @@ const Index: React.FC = () => {
     .sort((a, b) => a.display_order - b.display_order)
     .map(section => section.section_name);
 
+  useEffect(() => {
+    if (siteConfig && orderedSections) {
+      console.log("Available sections:", orderedSections);
+    }
+  }, [siteConfig, orderedSections]);
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -53,11 +61,16 @@ const Index: React.FC = () => {
             <SectionSkeleton />
           </>
         ) : orderedSections && orderedSections.length > 0 ? (
-          orderedSections.map(sectionName => (
-            <React.Fragment key={sectionName}>
-              {sectionComponents[sectionName]}
-            </React.Fragment>
-          ))
+          orderedSections.map(sectionName => {
+            if (sectionComponents[sectionName.toLowerCase()]) {
+              // If we have a predefined component for this section, use it
+              const SectionComponent = sectionComponents[sectionName.toLowerCase()];
+              return <SectionComponent key={sectionName} sectionName={sectionName} />;
+            } else {
+              // Otherwise use a generic section component
+              return <GenericSection key={sectionName} sectionName={sectionName} />;
+            }
+          })
         ) : (
           // Fallback if no configuration is available
           <>

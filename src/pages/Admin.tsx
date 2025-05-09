@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Project, Article } from '@/types/supabase-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SiteConfig, SiteContent, NavigationItem, SiteConfigInsert, SiteContentInsert, NavigationItemInsert, ProjectInsert, ArticleInsert } from '@/types/database-types';
 import EditModal from '@/components/admin/EditModal';
+import DeleteConfirmDialog from '@/components/admin/DeleteConfirmDialog';
+import { Project, Article } from '@/types/supabase-types';
 
 const Admin: React.FC = () => {
   const { toast } = useToast();
@@ -24,6 +24,10 @@ const Admin: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [currentItemType, setCurrentItemType] = useState<'section' | 'content' | 'navigation' | 'project' | 'article'>('section');
   const [currentItem, setCurrentItem] = useState<any>(null);
+  
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   
   // Content management queries - These must be at the top level of the component, not inside conditions
   const { data: siteConfig, isLoading: configLoading } = useQuery({
@@ -107,6 +111,77 @@ const Admin: React.FC = () => {
     enabled: isAuthenticated, // Only run this query when authenticated
   });
 
+  // Mutations for deleting items
+  const deleteMutation = useMutation({
+    mutationFn: async ({ itemType, id }: { itemType: string, id: string }) => {
+      let tableName = '';
+      
+      switch (itemType) {
+        case 'section':
+          tableName = 'site_config';
+          break;
+        case 'content':
+          tableName = 'site_content';
+          break;
+        case 'navigation':
+          tableName = 'navigation';
+          break;
+        case 'project':
+          tableName = 'projects';
+          break;
+        case 'article':
+          tableName = 'articles';
+          break;
+      }
+      
+      if (!tableName) throw new Error('Invalid item type');
+      
+      const { error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate queries based on the item type
+      switch (variables.itemType) {
+        case 'section':
+          queryClient.invalidateQueries({ queryKey: ['admin-site-config'] });
+          queryClient.invalidateQueries({ queryKey: ['site-config'] });
+          break;
+        case 'content':
+          queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
+          queryClient.invalidateQueries({ queryKey: ['site-content'] });
+          break;
+        case 'navigation':
+          queryClient.invalidateQueries({ queryKey: ['admin-navigation'] });
+          queryClient.invalidateQueries({ queryKey: ['navigation'] });
+          break;
+        case 'project':
+          queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          break;
+        case 'article':
+          queryClient.invalidateQueries({ queryKey: ['admin-articles'] });
+          queryClient.invalidateQueries({ queryKey: ['articles'] });
+          break;
+      }
+      
+      toast({
+        title: "Item Deleted",
+        description: "Successfully deleted item",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete item: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
   // Mutations for adding/updating items
   const sectionMutation = useMutation({
     mutationFn: async (data: SiteConfigInsert) => {
@@ -332,6 +407,21 @@ const Admin: React.FC = () => {
     setCurrentItem(item);
     setModalOpen(true);
   };
+  
+  // Open confirmation dialog for deleting an item
+  const handleDeleteConfirm = (itemType: 'section' | 'content' | 'navigation' | 'project' | 'article', item: any) => {
+    setCurrentItemType(itemType);
+    setItemToDelete({ itemType, id: item.id });
+    setDeleteDialogOpen(true);
+  };
+  
+  // Execute delete operation
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate(itemToDelete);
+      setDeleteDialogOpen(false);
+    }
+  };
 
   // Handle form submission
   const handleSubmit = (data: any) => {
@@ -447,6 +537,7 @@ const Admin: React.FC = () => {
                     <TableHead>Section Name</TableHead>
                     <TableHead>Display Order</TableHead>
                     <TableHead>Layout Type</TableHead>
+                    <TableHead>Page</TableHead>
                     <TableHead>Visibility</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -454,7 +545,7 @@ const Admin: React.FC = () => {
                 <TableBody>
                   {configLoading ? (
                     <TableRow>
-                      <TableCell colSpan={5}>
+                      <TableCell colSpan={6}>
                         <div className="space-y-2">
                           <Skeleton className="h-4 w-full" />
                           <Skeleton className="h-4 w-full" />
@@ -468,22 +559,29 @@ const Admin: React.FC = () => {
                         <TableCell className="font-medium">{section.section_name}</TableCell>
                         <TableCell>{section.display_order}</TableCell>
                         <TableCell>{section.layout_type}</TableCell>
+                        <TableCell>{section.page || 'home'}</TableCell>
                         <TableCell>{section.is_visible ? 'Visible' : 'Hidden'}</TableCell>
-                        <TableCell>
+                        <TableCell className="space-x-2">
                           <Button 
                             variant="outline" 
-                            size="sm" 
-                            className="mr-2"
+                            size="sm"
                             onClick={() => handleEdit('section', section)}
                           >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteConfirm('section', section)}
+                          >
+                            Delete
                           </Button>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">No sections found</TableCell>
+                      <TableCell colSpan={6} className="text-center">No sections found</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -528,7 +626,9 @@ const Admin: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : siteContent && siteContent.length > 0 ? (
-                    siteContent.map((content) => (
+                    siteContent
+                      .filter(content => !content.content_type.endsWith('_style'))
+                      .map((content) => (
                       <TableRow key={content.id}>
                         <TableCell>{content.section}</TableCell>
                         <TableCell>{content.content_type}</TableCell>
@@ -538,14 +638,20 @@ const Admin: React.FC = () => {
                             : content.content}
                         </TableCell>
                         <TableCell>{content.display_order}</TableCell>
-                        <TableCell>
+                        <TableCell className="space-x-2">
                           <Button 
                             variant="outline" 
-                            size="sm" 
-                            className="mr-2"
+                            size="sm"
                             onClick={() => handleEdit('content', content)}
                           >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteConfirm('content', content)}
+                          >
+                            Delete
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -605,14 +711,20 @@ const Admin: React.FC = () => {
                         <TableCell>{item.display_order}</TableCell>
                         <TableCell>{item.button_type}</TableCell>
                         <TableCell>{item.is_visible ? 'Visible' : 'Hidden'}</TableCell>
-                        <TableCell>
+                        <TableCell className="space-x-2">
                           <Button 
                             variant="outline" 
-                            size="sm" 
-                            className="mr-2"
+                            size="sm"
                             onClick={() => handleEdit('navigation', item)}
                           >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteConfirm('navigation', item)}
+                          >
+                            Delete
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -670,14 +782,20 @@ const Admin: React.FC = () => {
                         <TableCell>{project.description.substring(0, 50)}...</TableCell>
                         <TableCell>{project.tags.join(', ')}</TableCell>
                         <TableCell>{new Date(project.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
+                        <TableCell className="space-x-2">
                           <Button 
                             variant="outline" 
-                            size="sm" 
-                            className="mr-2"
+                            size="sm"
                             onClick={() => handleEdit('project', project)}
                           >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteConfirm('project', project)}
+                          >
+                            Delete
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -735,14 +853,20 @@ const Admin: React.FC = () => {
                         <TableCell>{article.category}</TableCell>
                         <TableCell>{article.read_time} min</TableCell>
                         <TableCell>{new Date(article.date).toLocaleDateString()}</TableCell>
-                        <TableCell>
+                        <TableCell className="space-x-2">
                           <Button 
                             variant="outline" 
-                            size="sm" 
-                            className="mr-2"
+                            size="sm"
                             onClick={() => handleEdit('article', article)}
                           >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteConfirm('article', article)}
+                          >
+                            Delete
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -769,6 +893,15 @@ const Admin: React.FC = () => {
         itemType={currentItemType}
         itemData={currentItem}
         onSubmit={handleSubmit}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={confirmDelete}
+        title="Confirm Delete"
+        description="Are you sure you want to delete this item? This action cannot be undone."
       />
     </div>
   );

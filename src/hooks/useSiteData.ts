@@ -3,14 +3,20 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SiteConfig, SiteContent, NavigationItem } from '@/types/database-types';
 
-export const useSiteConfig = () => {
+export const useSiteConfig = (page?: string) => {
   return useQuery({
-    queryKey: ['site-config'],
+    queryKey: ['site-config', page],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('site_config')
         .select('*')
-        .order('display_order', { ascending: true }) as any;
+        .order('display_order', { ascending: true });
+        
+      if (page) {
+        query = query.eq('page', page);
+      }
+      
+      const { data, error } = await query as any;
       
       if (error) throw error;
       return data as SiteConfig[];
@@ -72,4 +78,24 @@ export const getListContent = (
 ): string[] => {
   const content = getContentByType(contents, type);
   return content ? content.split(',') : [];
+};
+
+// Helper function to get styled content
+export const getStyledContent = (
+  contents: SiteContent[] | undefined,
+  type: string
+): { content: string, style: any } => {
+  const content = getContentByType(contents, type);
+  let style = {};
+  
+  const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
+  if (styleContent) {
+    try {
+      style = JSON.parse(styleContent);
+    } catch (e) {
+      console.error('Could not parse style:', e);
+    }
+  }
+  
+  return { content, style };
 };

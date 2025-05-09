@@ -1,21 +1,24 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { EditModalProps } from '@/types/database-types';
 import { useSiteConfig } from '@/hooks/useSiteData';
+import StyledTextEditor from './StyledTextEditor';
 
 const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemData, onSubmit }) => {
   // Get site config for section selection
   const { data: siteConfig } = useSiteConfig();
+  
+  // Add state for styles
+  const [contentStyles, setContentStyles] = useState<Record<string, any>>({});
   
   // Define schemas for different item types
   const sectionSchema = z.object({
@@ -23,7 +26,8 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
     section_name: z.string().min(1, "Section name is required"),
     display_order: z.coerce.number().default(0),
     is_visible: z.boolean().default(true),
-    layout_type: z.string().min(1, "Layout type is required")
+    layout_type: z.string().min(1, "Layout type is required"),
+    page: z.string().default('home')
   });
 
   const contentSchema = z.object({
@@ -32,7 +36,8 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
     content_type: z.string().min(1, "Content type is required"),
     content: z.string().min(1, "Content is required"),
     display_order: z.coerce.number().default(0),
-    is_visible: z.boolean().default(true)
+    is_visible: z.boolean().default(true),
+    style: z.string().optional()
   });
 
   const navigationSchema = z.object({
@@ -98,6 +103,16 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
       };
     }
     
+    // For content items, extract style if it exists
+    if (itemType === 'content' && itemData.content_type.endsWith('_style')) {
+      try {
+        const styleContent = JSON.parse(itemData.content);
+        setContentStyles(styleContent);
+      } catch (e) {
+        console.log('Could not parse style:', e);
+      }
+    }
+    
     return itemData;
   }, [itemData, itemType]);
 
@@ -112,16 +127,47 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
   React.useEffect(() => {
     if (isOpen) {
       form.reset(processedItemData || {});
+      
+      // Also reset content styles
+      if (itemType === 'content' && itemData?.content_type === 'content') {
+        try {
+          const styleContent = siteConfig?.find(s => 
+            s.section_name === itemData.section
+          )?.content_type === 'content_style' ? 
+            JSON.parse(itemData.content_style || '{}') : {};
+          setContentStyles(styleContent);
+        } catch (e) {
+          console.log('Could not parse style:', e);
+          setContentStyles({});
+        }
+      } else {
+        setContentStyles({});
+      }
     }
-  }, [form, processedItemData, isOpen]);
+  }, [form, processedItemData, isOpen, itemType, itemData, siteConfig]);
 
   // Handle form submission
   const handleSubmit = (data: any) => {
     // Ensure required fields are present
     try {
-      // Validate with schema before submitting
-      schema.parse(data);
-      onSubmit(data);
+      // Add style information if necessary
+      if (itemType === 'content' && contentStyles && Object.keys(contentStyles).length > 0) {
+        // If this is a content field and we have styles, create a style entry
+        const styleData = {
+          ...data,
+          content_type: `${data.content_type}_style`,
+          content: JSON.stringify(contentStyles)
+        };
+        
+        // Submit both the content and its style
+        schema.parse(data);
+        onSubmit(data);
+        onSubmit(styleData);
+      } else {
+        // Normal submission
+        schema.parse(data);
+        onSubmit(data);
+      }
       onClose();
     } catch (error) {
       console.error("Validation error:", error);
@@ -193,6 +239,34 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
             />
             <FormField
               control={form.control}
+              name="page"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Page</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value || 'home'}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select page" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="home">Home</SelectItem>
+                      <SelectItem value="about">About</SelectItem>
+                      <SelectItem value="contact">Contact</SelectItem>
+                      <SelectItem value="blog">Blog</SelectItem>
+                      <SelectItem value="portfolio">Portfolio</SelectItem>
+                      <SelectItem value="custom">Custom Page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Specify which page this section belongs to. Use 'home' for the main page.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="is_visible"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 mt-4">
@@ -254,19 +328,48 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="content"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Content</FormLabel>
-                  <FormControl>
-                    <Textarea rows={5} {...field} />
-                  </FormControl>
+                  <Tabs defaultValue="content">
+                    <TabsList className="mb-2">
+                      <TabsTrigger value="content">Content</TabsTrigger>
+                      <TabsTrigger value="styling">Styling</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="content">
+                      <FormControl>
+                        <StyledTextEditor 
+                          value={field.value}
+                          onChange={field.onChange}
+                          currentStyle={contentStyles}
+                          rows={5}
+                        />
+                      </FormControl>
+                    </TabsContent>
+                    <TabsContent value="styling">
+                      <div className="space-y-4">
+                        <div>
+                          <FormLabel>Text Styling</FormLabel>
+                          <StyledTextEditor 
+                            value={field.value}
+                            onChange={field.onChange}
+                            currentStyle={contentStyles}
+                            onStyleChange={setContentStyles}
+                            rows={5}
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="display_order"
@@ -300,6 +403,7 @@ const EditModal: React.FC<EditModalProps> = ({ isOpen, onClose, itemType, itemDa
             />
           </>
         );
+        
       case 'navigation':
         return (
           <>
