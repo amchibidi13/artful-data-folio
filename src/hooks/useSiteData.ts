@@ -84,9 +84,9 @@ export const getListContent = (
 export const getStyledContent = (
   contents: SiteContent[] | undefined,
   type: string
-): { content: string, style: Record<string, any> } => {
+): { content: string, style: Record<string, string | number | boolean> } => {
   const content = getContentByType(contents, type);
-  let style: Record<string, any> = {};
+  let style: Record<string, string | number | boolean> = {};
   
   const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
   if (styleContent) {
