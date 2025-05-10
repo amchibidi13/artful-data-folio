@@ -30,17 +30,19 @@ export const SiteTab = ({
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      if (data) {
-        // Create a mapping of page names to their links
-        const links: Record<string, string> = {};
-        data.forEach(page => {
-          links[page.page_name] = page.page_link || page.page_name.toLowerCase();
-        });
-        setPageLinks(links);
-      }
-    }
   });
+
+  // Use a React effect hook to update page links whenever pages data changes
+  React.useEffect(() => {
+    if (pages) {
+      // Create a mapping of page names to their links
+      const links: Record<string, string> = {};
+      pages.forEach(page => {
+        links[page.page_name] = page.page_link || page.page_name.toLowerCase();
+      });
+      setPageLinks(links);
+    }
+  }, [pages, setPageLinks]);
 
   const handleAdd = () => {
     onEdit('page', null);

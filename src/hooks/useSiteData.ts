@@ -129,10 +129,10 @@ export const usePageByLink = (link: string) => {
         .from('pages')
         .select('*')
         .eq('page_link', link)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return data as Page;
+      return data as Page | null;
     },
   });
 };
