@@ -84,7 +84,7 @@ export const SiteMapTab = () => {
                   className="flex items-center py-1 px-2 hover:bg-muted cursor-pointer rounded-lg"
                   onClick={() => toggleSection(section.id)}
                 >
-                  {section.fields?.length > 0 ? (
+                  {section.content?.length > 0 ? (
                     expandedSections[section.id] ? (
                       <ChevronDown className="h-4 w-4 mr-2" />
                     ) : (
@@ -107,7 +107,7 @@ export const SiteMapTab = () => {
                 </div>
                 
                 {/* Fields under this section */}
-                {expandedSections[section.id] && section.fields?.filter(field => !field.content_type.endsWith('_style')).map(field => (
+                {expandedSections[section.id] && section.content?.filter(field => !field.content_type.endsWith('_style')).map(field => (
                   <div 
                     key={field.id}
                     className="ml-8 border-l pl-2 py-1 flex items-center hover:bg-muted cursor-pointer rounded-lg"

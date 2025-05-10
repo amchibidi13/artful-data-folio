@@ -174,19 +174,22 @@ export const useSiteConfig = () => {
 };
 
 // Fetch site content for a specific section
-export const useSiteContent = (sectionName: string) => {
+export const useSiteContent = (sectionName?: string) => {
   return useQuery({
     queryKey: ['site_content', sectionName],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_content')
-        .select('*')
-        .eq('section_name', sectionName);
+      const query = supabase.from('site_content').select('*');
+      
+      if (sectionName) {
+        query.eq('section', sectionName);
+      }
+      
+      const { data, error } = await query;
       
       if (error) throw error;
       return data;
     },
-    enabled: !!sectionName,
+    enabled: true, // Always enabled, even without sectionName
   });
 };
 
@@ -196,7 +199,7 @@ export const useNavigationItems = () => {
     queryKey: ['navigation_items'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('navigation_items')
+        .from('navigation') // Changed from 'navigation_items' to 'navigation'
         .select('*')
         .order('display_order', { ascending: true });
       
@@ -244,13 +247,16 @@ export const useSiteStructure = () => {
           const { data: content, error: contentError } = await supabase
             .from('site_content')
             .select('*')
-            .eq('section_name', section.section_name);
+            .eq('section', section.section_name);
           
           if (contentError) throw contentError;
 
+          // Return section with its content that we'll use as "fields"
           return {
             ...section,
-            content: content
+            content,
+            // Add fields property to fix the type error in SiteMapTab
+            fields: content
           };
         }));
 

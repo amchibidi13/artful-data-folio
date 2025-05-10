@@ -90,30 +90,26 @@ export const SectionTab = ({
   const getInputTypeLabel = (fieldType: string) => {
     const inputType = getFieldInputType(fieldType);
     switch (inputType) {
-      case 'short_text':
-        return 'Short Text';
-      case 'long_text':
+      case 'text':
+        return 'Text';
+      case 'textarea':
         return 'Long Text';
-      case 'rich_text':
-        return 'Rich Text';
       case 'image':
         return 'Image URL';
       case 'url':
         return 'URL';
-      case 'list_of_strings':
+      case 'list':
         return 'List';
-      case 'list_of_objects':
-        return 'JSON List';
+      case 'json':
+        return 'JSON';
       case 'date':
         return 'Date';
       case 'email':
         return 'Email';
-      case 'phone_number':
-        return 'Phone';
-      case 'select':
-        return 'Select';
-      case 'icon_picker':
-        return 'Icon';
+      case 'password':
+        return 'Password';
+      case 'color':
+        return 'Color';
       default:
         return 'Text';
     }
