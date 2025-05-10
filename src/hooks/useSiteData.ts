@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SiteConfig, SiteContent, NavigationItem, Page } from '@/types/database-types';
@@ -125,7 +124,6 @@ export const usePageByLink = (link: string) => {
   return useQuery({
     queryKey: ['page-by-link', link],
     queryFn: async () => {
-      // Using maybeSingle() instead of single() to fix the type recursion issue
       const { data, error } = await supabase
         .from('pages')
         .select('*')

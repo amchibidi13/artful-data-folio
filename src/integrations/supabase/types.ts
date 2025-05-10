@@ -88,6 +88,7 @@ export type Database = {
           id: string
           is_system_page: boolean
           is_visible: boolean
+          page_link: string | null
           page_name: string
           updated_at: string
         }
@@ -97,6 +98,7 @@ export type Database = {
           id?: string
           is_system_page?: boolean
           is_visible?: boolean
+          page_link?: string | null
           page_name: string
           updated_at?: string
         }
@@ -106,6 +108,7 @@ export type Database = {
           id?: string
           is_system_page?: boolean
           is_visible?: boolean
+          page_link?: string | null
           page_name?: string
           updated_at?: string
         }
