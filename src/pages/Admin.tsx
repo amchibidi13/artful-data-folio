@@ -16,6 +16,8 @@ import { AdminProvider } from '@/context/AdminContext';
 import SiteTab from '@/components/admin/SiteTab';
 import PageTab from '@/components/admin/PageTab';
 import SectionTab from '@/components/admin/SectionTab';
+import SiteMapTab from '@/components/admin/SiteMapTab';
+import HelpTab from '@/components/admin/HelpTab';
 import PageEditModal from '@/components/admin/PageEditModal';
 import SectionEditModal from '@/components/admin/SectionEditModal';
 import ContentEditModal from '@/components/admin/ContentEditModal';
@@ -85,11 +87,13 @@ const Admin: React.FC = () => {
           queryClient.invalidateQueries({ queryKey: ['admin-sections'] });
           queryClient.invalidateQueries({ queryKey: ['admin-sections-for-dropdown'] });
           queryClient.invalidateQueries({ queryKey: ['site-config'] });
+          queryClient.invalidateQueries({ queryKey: ['site-structure'] });
           break;
         case 'content':
           queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
           queryClient.invalidateQueries({ queryKey: ['admin-content'] });
           queryClient.invalidateQueries({ queryKey: ['site-content'] });
+          queryClient.invalidateQueries({ queryKey: ['site-structure'] });
           break;
         case 'navigation':
           queryClient.invalidateQueries({ queryKey: ['admin-navigation'] });
@@ -141,6 +145,7 @@ const Admin: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pages'] });
+      queryClient.invalidateQueries({ queryKey: ['site-structure'] });
       toast({
         title: currentItem?.id ? "Page Updated" : "Page Added",
         description: `Successfully ${currentItem?.id ? "updated" : "added"} page.`,
@@ -181,6 +186,7 @@ const Admin: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-sections'] });
       queryClient.invalidateQueries({ queryKey: ['admin-sections-for-dropdown'] });
       queryClient.invalidateQueries({ queryKey: ['site-config'] });
+      queryClient.invalidateQueries({ queryKey: ['site-structure'] });
       toast({
         title: currentItem?.id ? "Section Updated" : "Section Added",
         description: `Successfully ${currentItem?.id ? "updated" : "added"} section.`,
@@ -220,6 +226,7 @@ const Admin: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
       queryClient.invalidateQueries({ queryKey: ['admin-content'] });
       queryClient.invalidateQueries({ queryKey: ['site-content'] });
+      queryClient.invalidateQueries({ queryKey: ['site-structure'] });
       toast({
         title: currentItem?.id ? "Content Updated" : "Content Added",
         description: `Successfully ${currentItem?.id ? "updated" : "added"} content.`,
@@ -382,10 +389,12 @@ const Admin: React.FC = () => {
         </div>
         
         <Tabs defaultValue="site" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-8">
+          <TabsList className="grid grid-cols-5 mb-8">
             <TabsTrigger value="site">Site</TabsTrigger>
             <TabsTrigger value="page">Page</TabsTrigger>
             <TabsTrigger value="section">Section</TabsTrigger>
+            <TabsTrigger value="sitemap">SiteMap</TabsTrigger>
+            <TabsTrigger value="help">Help</TabsTrigger>
           </TabsList>
           
           {/* Site Tab - Manage Pages */}
@@ -438,6 +447,36 @@ const Admin: React.FC = () => {
                   onEdit={handleEdit}
                   onDelete={handleDeleteConfirm}
                 />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* SiteMap Tab - Site Structure Visualization */}
+          <TabsContent value="sitemap" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>SiteMap</CardTitle>
+                <CardDescription>
+                  Visual representation of the site structure
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SiteMapTab />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Help Tab - Documentation */}
+          <TabsContent value="help" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Help & Documentation</CardTitle>
+                <CardDescription>
+                  Information about layouts and field types
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <HelpTab />
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
@@ -9,6 +9,9 @@ import { NavigationItem, Page } from '@/types/database-types';
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const currentPath = location.pathname === '/' ? 'home' : location.pathname.substring(1);
+  
   const { data: navigationItems } = useNavigationItems();
   const { data: pages } = usePages();
 
@@ -23,8 +26,8 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-8">
           <Link to="/" className="font-bold text-xl">Website</Link>
           <nav className="hidden md:flex items-center gap-6">
-            {/* Regular navigation items */}
-            {navigationItems?.map((item: NavigationItem) => (
+            {/* Current page navigation items */}
+            {currentPath === 'home' && navigationItems?.map((item: NavigationItem) => (
               <a 
                 key={item.id} 
                 href={`#${item.target_section}`}
@@ -35,15 +38,23 @@ const Header: React.FC = () => {
             ))}
             
             {/* Links to other pages */}
-            {visiblePages.map((page: Page) => (
-              <Link
-                key={page.id}
-                to={`/${page.page_link || page.page_name.toLowerCase()}`}
-                className="text-sm font-medium transition-colors hover:text-primary"
-              >
-                {page.page_name}
-              </Link>
-            ))}
+            {visiblePages.map((page: Page) => {
+              const pageLink = `/${page.page_link || page.page_name.toLowerCase()}`;
+              const isCurrentPage = pageLink === location.pathname || 
+                (pageLink === '/home' && location.pathname === '/');
+              
+              return (
+                <Link
+                  key={page.id}
+                  to={page.page_link === 'home' ? '/' : pageLink}
+                  className={`text-sm font-medium transition-colors ${
+                    isCurrentPage ? 'text-primary' : 'hover:text-primary'
+                  }`}
+                >
+                  {page.page_name}
+                </Link>
+              );
+            })}
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -59,8 +70,8 @@ const Header: React.FC = () => {
             </SheetTrigger>
             <SheetContent side="left">
               <nav className="flex flex-col gap-4 mt-8">
-                {/* Mobile navigation items */}
-                {navigationItems?.map((item: NavigationItem) => (
+                {/* Mobile navigation items for current page */}
+                {currentPath === 'home' && navigationItems?.map((item: NavigationItem) => (
                   <a 
                     key={item.id} 
                     href={`#${item.target_section}`}
@@ -72,16 +83,24 @@ const Header: React.FC = () => {
                 ))}
                 
                 {/* Mobile links to other pages */}
-                {visiblePages.map((page: Page) => (
-                  <Link
-                    key={page.id}
-                    to={`/${page.page_link || page.page_name.toLowerCase()}`}
-                    className="text-sm font-medium transition-colors hover:text-primary"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {page.page_name}
-                  </Link>
-                ))}
+                {visiblePages.map((page: Page) => {
+                  const pageLink = `/${page.page_link || page.page_name.toLowerCase()}`;
+                  const isCurrentPage = pageLink === location.pathname || 
+                    (pageLink === '/home' && location.pathname === '/');
+                    
+                  return (
+                    <Link
+                      key={page.id}
+                      to={page.page_link === 'home' ? '/' : pageLink}
+                      className={`text-sm font-medium transition-colors ${
+                        isCurrentPage ? 'text-primary' : 'hover:text-primary'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      {page.page_name}
+                    </Link>
+                  );
+                })}
                 
                 <Link 
                   to="/admin" 

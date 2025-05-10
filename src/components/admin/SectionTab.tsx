@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pencil, Trash, Plus } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 import { SiteContent } from '@/types/database-types';
+import { getFieldInputType } from '@/hooks/useSiteData';
 
 export const SectionTab = ({
   onEdit,
@@ -86,6 +87,38 @@ export const SectionTab = ({
     onDelete('content', content);
   };
 
+  const getInputTypeLabel = (fieldType: string) => {
+    const inputType = getFieldInputType(fieldType);
+    switch (inputType) {
+      case 'short_text':
+        return 'Short Text';
+      case 'long_text':
+        return 'Long Text';
+      case 'rich_text':
+        return 'Rich Text';
+      case 'image':
+        return 'Image URL';
+      case 'url':
+        return 'URL';
+      case 'list_of_strings':
+        return 'List';
+      case 'list_of_objects':
+        return 'JSON List';
+      case 'date':
+        return 'Date';
+      case 'email':
+        return 'Email';
+      case 'phone_number':
+        return 'Phone';
+      case 'select':
+        return 'Select';
+      case 'icon_picker':
+        return 'Icon';
+      default:
+        return 'Text';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,7 +185,7 @@ export const SectionTab = ({
           <TableRow>
             <TableHead>Display Order</TableHead>
             <TableHead>Field Type</TableHead>
-            <TableHead>Content</TableHead>
+            <TableHead>Input Type</TableHead>
             <TableHead>Visibility</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -176,9 +209,7 @@ export const SectionTab = ({
                 <TableCell>{content.display_order}</TableCell>
                 <TableCell>{content.field_type || content.content_type}</TableCell>
                 <TableCell>
-                  {content.content && content.content.length > 40
-                    ? `${content.content.substring(0, 40)}...`
-                    : content.content}
+                  {getInputTypeLabel(content.field_type || content.content_type)}
                 </TableCell>
                 <TableCell>{content.is_visible ? 'Visible' : 'Hidden'}</TableCell>
                 <TableCell className="space-x-2">
