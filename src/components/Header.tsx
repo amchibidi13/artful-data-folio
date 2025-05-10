@@ -17,8 +17,20 @@ const Header: React.FC = () => {
 
   const visiblePages = React.useMemo(() => {
     if (!pages) return [];
-    return pages.filter(page => page.is_visible && !page.is_system_page);
+    // Only include system pages and pages explicitly marked for header navigation
+    return pages.filter(page => page.is_visible && !page.is_system_page && page.include_in_navigation);
   }, [pages]);
+
+  // Determine which navigation items to show based on the current page
+  const currentPageNavItems = React.useMemo(() => {
+    if (!navigationItems) return [];
+    if (currentPath === 'home' || currentPath === '') {
+      // Only show section navigation on home page
+      return navigationItems;
+    }
+    // Don't show section navigation on other pages
+    return [];
+  }, [navigationItems, currentPath]);
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
@@ -26,8 +38,8 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-8">
           <Link to="/" className="font-bold text-xl">Website</Link>
           <nav className="hidden md:flex items-center gap-6">
-            {/* Current page navigation items */}
-            {currentPath === 'home' && navigationItems?.map((item: NavigationItem) => (
+            {/* Current page section navigation */}
+            {currentPageNavItems.map((item: NavigationItem) => (
               <a 
                 key={item.id} 
                 href={`#${item.target_section}`}
@@ -71,7 +83,7 @@ const Header: React.FC = () => {
             <SheetContent side="left">
               <nav className="flex flex-col gap-4 mt-8">
                 {/* Mobile navigation items for current page */}
-                {currentPath === 'home' && navigationItems?.map((item: NavigationItem) => (
+                {currentPageNavItems.map((item: NavigationItem) => (
                   <a 
                     key={item.id} 
                     href={`#${item.target_section}`}

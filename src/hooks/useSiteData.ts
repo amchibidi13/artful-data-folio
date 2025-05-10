@@ -199,7 +199,7 @@ export const useNavigationItems = () => {
     queryKey: ['navigation_items'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('navigation') // Changed from 'navigation_items' to 'navigation'
+        .from('navigation')
         .select('*')
         .order('display_order', { ascending: true });
       

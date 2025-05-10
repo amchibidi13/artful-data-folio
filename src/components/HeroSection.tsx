@@ -4,8 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useSiteContent, getContentByType } from '@/hooks/useSiteData';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const HeroSection: React.FC = () => {
-  const { data: heroContent, isLoading } = useSiteContent('hero');
+interface HeroSectionProps {
+  sectionName: string;
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ sectionName }) => {
+  const { data: heroContent, isLoading } = useSiteContent(sectionName);
 
   const scrollToProjects = () => {
     const element = document.getElementById('projects');
@@ -32,9 +36,10 @@ const HeroSection: React.FC = () => {
   const subtitle = getContentByType(heroContent, 'subtitle');
   const description = getContentByType(heroContent, 'description');
   const buttonText = getContentByType(heroContent, 'button_text');
+  const backgroundImage = getContentByType(heroContent, 'background_image');
 
   return (
-    <section className="min-h-[90vh] flex items-center pt-20">
+    <section id={sectionName.toLowerCase()} className="min-h-[90vh] flex items-center pt-20">
       <div className="container">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div className="space-y-6 animate-fade-in">
@@ -89,8 +94,8 @@ const HeroSection: React.FC = () => {
             <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-data-blue/10 rounded-full blur-3xl"></div>
             <div className="relative z-10 rounded-xl overflow-hidden shadow-2xl border border-gray-200">
               <img 
-                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80" 
-                alt="Data visualization" 
+                src={backgroundImage || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80"}
+                alt="Hero image" 
                 className="object-cover w-full h-full"
               />
             </div>

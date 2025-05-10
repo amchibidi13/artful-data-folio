@@ -59,11 +59,11 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
 
   // Map section names to components
   const sectionComponents: Record<string, (props: { sectionName: string }) => React.ReactNode> = {
-    'hero': ({ sectionName }) => <HeroSection key={sectionName} />,
-    'about': ({ sectionName }) => <AboutSection key={sectionName} />,
-    'projects': ({ sectionName }) => <ProjectsSection key={sectionName} />,
-    'articles': ({ sectionName }) => <ArticlesSection key={sectionName} />,
-    'contact': ({ sectionName }) => <ContactSection key={sectionName} />
+    'hero': ({ sectionName }) => <HeroSection key={sectionName} sectionName={sectionName} />,
+    'about': ({ sectionName }) => <AboutSection key={sectionName} sectionName={sectionName} />,
+    'projects': ({ sectionName }) => <ProjectsSection key={sectionName} sectionName={sectionName} />,
+    'articles': ({ sectionName }) => <ArticlesSection key={sectionName} sectionName={sectionName} />,
+    'contact': ({ sectionName }) => <ContactSection key={sectionName} sectionName={sectionName} />
   };
 
   // Loading skeleton for sections
@@ -104,9 +104,11 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
           </>
         ) : orderedSections && orderedSections.length > 0 ? (
           orderedSections.map(sectionName => {
-            if (sectionComponents[sectionName.toLowerCase()]) {
+            // Convert sectionName to lowercase for component lookup
+            const lowerSectionName = sectionName.toLowerCase();
+            if (sectionComponents[lowerSectionName]) {
               // If we have a predefined component for this section, use it
-              const SectionComponent = sectionComponents[sectionName.toLowerCase()];
+              const SectionComponent = sectionComponents[lowerSectionName];
               return <SectionComponent key={sectionName} sectionName={sectionName} />;
             } else {
               // Otherwise use a generic section component
