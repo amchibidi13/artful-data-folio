@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useSiteConfig, useSiteContent } from '@/hooks/useSiteData';
+import { useParams, useLocation } from 'react-router-dom';
+import { useSiteConfig, useSiteContent, usePageByLink } from '@/hooks/useSiteData';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import ProjectsSection from '@/components/ProjectsSection';
@@ -17,19 +17,45 @@ interface IndexProps {
   initialPage?: string;
 }
 
-const Index: React.FC<IndexProps> = ({ initialPage = 'home' }) => {
+const Index: React.FC<IndexProps> = ({ initialPage }) => {
   const { data: allSiteConfig, isLoading } = useSiteConfig();
   const { toast } = useToast();
-  const params = useParams();
+  const location = useLocation();
+  
+  // Extract the current path without leading slash
+  const currentPath = location.pathname.replace(/^\//, '');
+  
+  // Determine which page to show based on path or initialPage
+  const currentPageName = React.useMemo(() => {
+    if (currentPath === '') {
+      return 'home'; // Default to home when on root path
+    }
+    
+    // If we have a specific path, look up the page by its link
+    if (currentPath) {
+      // This is just for initial determination, we'll verify with actual data below
+      return initialPage || currentPath;
+    }
+    
+    return 'home';
+  }, [currentPath, initialPage]);
 
-  // Determine which page to show
-  const currentPage = initialPage;
-
+  // Get page data by current path to verify it exists
+  const { data: pageData } = usePageByLink(currentPath || 'home');
+  
+  // Final page name to use - either from page data or fallback to determined name
+  const finalPageName = React.useMemo(() => {
+    if (pageData) {
+      return pageData.page_name;
+    }
+    return currentPageName;
+  }, [pageData, currentPageName]);
+  
   // Filter site config for current page
   const siteConfig = React.useMemo(() => {
     if (!allSiteConfig) return [];
-    return allSiteConfig.filter(config => config.page === currentPage);
-  }, [allSiteConfig, currentPage]);
+    return allSiteConfig.filter(config => config.page === finalPageName);
+  }, [allSiteConfig, finalPageName]);
 
   // Map section names to components
   const sectionComponents: Record<string, (props: { sectionName: string }) => React.ReactNode> = {
@@ -62,9 +88,9 @@ const Index: React.FC<IndexProps> = ({ initialPage = 'home' }) => {
 
   useEffect(() => {
     if (siteConfig && orderedSections) {
-      console.log(`Available sections for page ${currentPage}:`, orderedSections);
+      console.log(`Available sections for page ${finalPageName}:`, orderedSections);
     }
-  }, [siteConfig, orderedSections, currentPage]);
+  }, [siteConfig, orderedSections, finalPageName]);
 
   return (
     <div className="min-h-screen">
@@ -92,7 +118,7 @@ const Index: React.FC<IndexProps> = ({ initialPage = 'home' }) => {
           <>
             <div className="py-20">
               <div className="container text-center">
-                <h1 className="text-3xl font-bold mb-4">Welcome to {currentPage}</h1>
+                <h1 className="text-3xl font-bold mb-4">Welcome to {finalPageName}</h1>
                 <p className="text-lg text-muted-foreground">
                   This page has no sections configured yet. Add sections in the admin dashboard.
                 </p>

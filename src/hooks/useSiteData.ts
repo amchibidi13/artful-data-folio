@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SiteConfig, SiteContent, NavigationItem, Page } from '@/types/database-types';
@@ -133,5 +134,6 @@ export const usePageByLink = (link: string) => {
       if (error) throw error;
       return data as Page | null;
     },
+    enabled: !!link,
   });
 };

@@ -8,28 +8,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
-import { useSiteConfig } from "./hooks/useSiteData";
+import { usePages } from "./hooks/useSiteData";
 
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   // Fetch available pages
-  const { data: siteConfig, isLoading } = useSiteConfig();
+  const { data: pages, isLoading } = usePages();
   
-  // Extract unique page names
-  const pages = React.useMemo(() => {
-    if (!siteConfig) return ['home'];
-    
-    const uniquePages = new Set<string>();
-    siteConfig.forEach(config => {
-      if (config.page && config.page !== 'admin') {
-        uniquePages.add(config.page);
-      }
-    });
-    
-    return Array.from(uniquePages);
-  }, [siteConfig]);
-
   if (isLoading) {
     return null; // Or a loading indicator
   }
@@ -39,10 +25,16 @@ const AppRoutes = () => {
       <Route path="/" element={<Index />} />
       <Route path="/admin" element={<Admin />} />
       
-      {/* Dynamic routes for all pages */}
-      {pages.map(pageName => {
-        if (pageName === 'home') return null; // Home is already handled
-        return <Route key={pageName} path={`/${pageName.toLowerCase()}`} element={<Index initialPage={pageName} />} />;
+      {/* Dynamic routes for all pages based on page_link */}
+      {pages && pages.map(page => {
+        if (!page.page_link || page.page_link === 'home') return null; // Skip home as it's already handled
+        return (
+          <Route 
+            key={page.id}
+            path={`/${page.page_link}`} 
+            element={<Index initialPage={page.page_name} />} 
+          />
+        );
       })}
       
       {/* Catch-all route */}
