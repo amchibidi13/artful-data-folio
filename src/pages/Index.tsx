@@ -1,4 +1,6 @@
+
 import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useSiteConfig, useSiteContent } from '@/hooks/useSiteData';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
@@ -11,9 +13,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import GenericSection from '@/components/GenericSection';
 import { useToast } from '@/hooks/use-toast';
 
-const Index: React.FC = () => {
-  const { data: siteConfig, isLoading } = useSiteConfig();
+interface IndexProps {
+  initialPage?: string;
+}
+
+const Index: React.FC<IndexProps> = ({ initialPage = 'home' }) => {
+  const { data: allSiteConfig, isLoading } = useSiteConfig();
   const { toast } = useToast();
+  const params = useParams();
+
+  // Determine which page to show
+  const currentPage = initialPage;
+
+  // Filter site config for current page
+  const siteConfig = React.useMemo(() => {
+    if (!allSiteConfig) return [];
+    return allSiteConfig.filter(config => config.page === currentPage);
+  }, [allSiteConfig, currentPage]);
 
   // Map section names to components
   const sectionComponents: Record<string, (props: { sectionName: string }) => React.ReactNode> = {
@@ -46,9 +62,9 @@ const Index: React.FC = () => {
 
   useEffect(() => {
     if (siteConfig && orderedSections) {
-      console.log("Available sections:", orderedSections);
+      console.log(`Available sections for page ${currentPage}:`, orderedSections);
     }
-  }, [siteConfig, orderedSections]);
+  }, [siteConfig, orderedSections, currentPage]);
 
   return (
     <div className="min-h-screen">
@@ -72,13 +88,16 @@ const Index: React.FC = () => {
             }
           })
         ) : (
-          // Fallback if no configuration is available
+          // Fallback if no configuration is available for this page
           <>
-            <HeroSection />
-            <AboutSection />
-            <ProjectsSection />
-            <ArticlesSection />
-            <ContactSection />
+            <div className="py-20">
+              <div className="container text-center">
+                <h1 className="text-3xl font-bold mb-4">Welcome to {currentPage}</h1>
+                <p className="text-lg text-muted-foreground">
+                  This page has no sections configured yet. Add sections in the admin dashboard.
+                </p>
+              </div>
+            </div>
           </>
         )}
       </main>

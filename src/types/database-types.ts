@@ -1,4 +1,3 @@
-
 export interface SiteConfig {
   id: string;
   section_name: string;
@@ -67,6 +66,7 @@ export interface Page {
   display_order: number;
   is_visible: boolean;
   is_system_page: boolean;
+  page_link?: string;
   created_at: string;
   updated_at: string;
 }
@@ -135,6 +135,7 @@ export interface ArticleInsert {
 export interface PageInsert {
   id?: string;
   page_name: string;
+  page_link?: string;
   display_order?: number;
   is_visible?: boolean;
   is_system_page?: boolean;

@@ -6,6 +6,8 @@ type AdminContextType = {
   setSelectedPage: (page: string) => void;
   selectedSection: string;
   setSelectedSection: (section: string) => void;
+  pageLinks: Record<string, string>;
+  setPageLinks: (links: Record<string, string>) => void;
 };
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -13,6 +15,7 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedPage, setSelectedPage] = useState<string>('home');
   const [selectedSection, setSelectedSection] = useState<string>('');
+  const [pageLinks, setPageLinks] = useState<Record<string, string>>({});
 
   return (
     <AdminContext.Provider
@@ -21,6 +24,8 @@ export const AdminProvider = ({ children }: { children: React.ReactNode }) => {
         setSelectedPage,
         selectedSection,
         setSelectedSection,
+        pageLinks,
+        setPageLinks
       }}
     >
       {children}

@@ -17,7 +17,7 @@ export const SiteTab = ({
   onDelete: (type: 'page', item: any) => void
 }) => {
   const queryClient = useQueryClient();
-  const { setSelectedPage } = useAdmin();
+  const { setSelectedPage, setPageLinks } = useAdmin();
   
   const { data: pages, isLoading } = useQuery({
     queryKey: ['pages'],
@@ -30,6 +30,16 @@ export const SiteTab = ({
       if (error) throw error;
       return data;
     },
+    onSuccess: (data) => {
+      if (data) {
+        // Create a mapping of page names to their links
+        const links: Record<string, string> = {};
+        data.forEach(page => {
+          links[page.page_name] = page.page_link || page.page_name.toLowerCase();
+        });
+        setPageLinks(links);
+      }
+    }
   });
 
   const handleAdd = () => {
@@ -71,8 +81,8 @@ export const SiteTab = ({
           <TableRow>
             <TableHead>Display Order</TableHead>
             <TableHead>Page Name</TableHead>
+            <TableHead>Page Link</TableHead>
             <TableHead>Visibility</TableHead>
-            <TableHead>Type</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -92,8 +102,8 @@ export const SiteTab = ({
               <TableRow key={page.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handleSelectPage(page.page_name)}>
                 <TableCell>{page.display_order}</TableCell>
                 <TableCell className="font-medium">{page.page_name}</TableCell>
+                <TableCell>{page.page_link || page.page_name.toLowerCase()}</TableCell>
                 <TableCell>{page.is_visible ? 'Visible' : 'Hidden'}</TableCell>
-                <TableCell>{page.is_system_page ? 'System Page' : 'Custom Page'}</TableCell>
                 <TableCell className="space-x-2">
                   <Button 
                     variant="ghost" 

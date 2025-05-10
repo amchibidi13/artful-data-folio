@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { SiteConfig, SiteContent, NavigationItem } from '@/types/database-types';
+import { SiteConfig, SiteContent, NavigationItem, Page } from '@/types/database-types';
 
 export const useSiteConfig = (page?: string) => {
   return useQuery({
@@ -80,6 +80,10 @@ export const getListContent = (
   return content ? content.split(',').map(item => item.trim()) : [];
 };
 
+// Helper type definitions to resolve type issues
+type StyleValue = string | number | boolean | null | undefined;
+type StyleObject = { [key: string]: StyleValue | StyleObject };
+
 // Helper function to get styled content
 export const getStyledContent = (
   contents: SiteContent[] | undefined,
@@ -91,7 +95,7 @@ export const getStyledContent = (
   const styleContent = contents?.find(item => item.content_type === `${type}_style`)?.content;
   if (styleContent) {
     try {
-      style = JSON.parse(styleContent);
+      style = JSON.parse(styleContent) as StyleObject;
     } catch (e) {
       console.error('Could not parse style:', e);
     }
@@ -111,7 +115,24 @@ export const usePages = () => {
         .order('display_order', { ascending: true });
       
       if (error) throw error;
-      return data;
+      return data as Page[];
+    },
+  });
+};
+
+// Get page by link
+export const usePageByLink = (link: string) => {
+  return useQuery({
+    queryKey: ['page-by-link', link],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('page_link', link)
+        .single();
+      
+      if (error) throw error;
+      return data as Page;
     },
   });
 };

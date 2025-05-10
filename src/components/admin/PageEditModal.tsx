@@ -12,6 +12,7 @@ import * as z from 'zod';
 const pageSchema = z.object({
   id: z.string().optional(),
   page_name: z.string().min(1, "Page name is required"),
+  page_link: z.string().min(1, "Page link is required"),
   display_order: z.coerce.number().default(0),
   is_visible: z.boolean().default(true),
   is_system_page: z.boolean().default(false)
@@ -32,6 +33,7 @@ export const PageEditModal = ({
     resolver: zodResolver(pageSchema),
     defaultValues: itemData || {
       page_name: '',
+      page_link: '',
       display_order: 0,
       is_visible: true,
       is_system_page: false
@@ -40,14 +42,30 @@ export const PageEditModal = ({
 
   React.useEffect(() => {
     if (isOpen) {
-      form.reset(itemData || {
+      const defaultData = itemData || {
         page_name: '',
+        page_link: '',
         display_order: 0,
         is_visible: true,
         is_system_page: false
-      });
+      };
+      
+      // If new page or page_link is empty, set it from page_name
+      if (!itemData?.id && !defaultData.page_link) {
+        defaultData.page_link = defaultData.page_name.toLowerCase();
+      }
+      
+      form.reset(defaultData);
     }
   }, [form, itemData, isOpen]);
+
+  // When page name changes, update the link if it's a new page
+  const watchPageName = form.watch('page_name');
+  React.useEffect(() => {
+    if (!itemData?.id && watchPageName) {
+      form.setValue('page_link', watchPageName.toLowerCase().replace(/\s+/g, '-'));
+    }
+  }, [watchPageName, form, itemData]);
 
   const handleSubmit = (data: any) => {
     onSubmit(data);
@@ -70,6 +88,22 @@ export const PageEditModal = ({
                   <FormControl>
                     <Input {...field} disabled={itemData?.is_system_page} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="page_link"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Page Link</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled={itemData?.is_system_page} />
+                  </FormControl>
+                  <FormDescription>
+                    This will be used in the URL (e.g., /about)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

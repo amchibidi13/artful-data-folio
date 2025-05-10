@@ -1,85 +1,162 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import StyledTextEditor from './StyledTextEditor';
-
-// Field type options by layout type
-const fieldTypesByLayout: Record<string, string[]> = {
-  'hero': ['hero_title', 'hero_subtitle', 'hero_description', 'hero_image_url', 'cta_button_text', 'cta_button_link'],
-  'cta': ['cta_title', 'cta_description', 'cta_button_text', 'cta_button_link'],
-  'intro': ['section_title', 'section_subtitle', 'section_description'],
-  'features': ['features_title', 'features_list', 'feature_title', 'feature_description', 'feature_icon'],
-  'alternating': ['section_title', 'paragraph_1', 'paragraph_2', 'image_url', 'button_text', 'button_link'],
-  'benefits': ['section_title', 'benefits_list'],
-  'comparison': ['section_title', 'plan_name', 'plan_features', 'plan_price', 'billing_cycle'],
-  'testimonials': ['testimonial_text', 'testimonial_author', 'testimonial_role', 'testimonial_company', 'testimonial_avatar_url'],
-  'clients': ['section_title', 'logo_url'],
-  'cases': ['section_title', 'post_title', 'post_excerpt', 'post_image_url', 'post_link'],
-  'media': ['section_title', 'logo_url', 'post_link'],
-  'products': ['services_title', 'services_list', 'image_url', 'description', 'button_text'],
-  'pricing': ['pricing_title', 'plan_name', 'plan_price', 'plan_features', 'plan_cta_text', 'plan_cta_link', 'billing_cycle'],
-  'stats': ['stat_title', 'stat_value', 'stat_description'],
-  'milestones': ['milestone_name', 'milestone_date', 'milestone_description'],
-  'blog': ['post_title', 'post_excerpt', 'post_image_url', 'post_date', 'post_author', 'post_tags', 'post_link'],
-  'faq': ['faq_question', 'faq_answer'],
-  'contact_form': ['form_title', 'form_subtitle', 'form_name_label', 'form_email_label', 'form_message_label', 'form_submit_text', 'form_success_message', 'form_error_message'],
-  'contact_info': ['contact_title', 'contact_description', 'contact_address', 'contact_email', 'contact_phone', 'map_embed_url'],
-  'newsletter': ['section_title', 'form_email_label', 'form_submit_text'],
-  'resume': ['education_title', 'education_list', 'education_institution', 'education_degree', 'education_year', 'experience_title', 'experience_list', 'job_title', 'company_name', 'job_duration', 'job_description'],
-  'login': ['form_title', 'form_name_label', 'form_email_label', 'form_submit_text'],
-  'navigation': ['nav_links', 'nav_link_text', 'nav_link_url', 'logo_url'],
-  'footer': ['footer_text', 'footer_links', 'sitemap_links', 'social_links'],
-  'utility': ['language_options', 'theme_toggle_text'],
-  'error': ['error_code', 'error_message']
-};
-
-// Content format types
-const contentFormatTypes = [
-  { value: 'short_text', label: 'Short Text (single-line)' },
-  { value: 'long_text', label: 'Long Text (multi-line)' },
-  { value: 'rich_text', label: 'Rich Text (formatted)' },
-  { value: 'url', label: 'URL' },
-  { value: 'email', label: 'Email' },
-  { value: 'phone_number', label: 'Phone Number' },
-  { value: 'image', label: 'Image URL' },
-  { value: 'video', label: 'Video URL/Embed' },
-  { value: 'icon_picker', label: 'Icon' },
-  { value: 'date', label: 'Date' },
-  { value: 'datetime', label: 'Date & Time' },
-  { value: 'number', label: 'Number' },
-  { value: 'boolean', label: 'Boolean (Yes/No)' },
-  { value: 'list_of_strings', label: 'List of Strings' },
-  { value: 'list_of_objects', label: 'List of Objects' },
-  { value: 'select', label: 'Select (Dropdown)' },
-  { value: 'multi_select', label: 'Multi-Select' },
-  { value: 'color_picker', label: 'Color Picker' },
-  { value: 'map_location', label: 'Map Location' },
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'reference', label: 'Reference Link' }
-];
+import { useAdmin } from '@/context/AdminContext';
 
 const contentSchema = z.object({
   id: z.string().optional(),
   section: z.string().min(1, "Section is required"),
   content_type: z.string().min(1, "Content type is required"),
-  field_type: z.string().nullable().optional(),
+  field_type: z.string().optional(),
   content: z.string().min(1, "Content is required"),
   display_order: z.coerce.number().default(0),
-  is_visible: z.boolean().default(true),
-  content_format: z.string().optional(),
+  is_visible: z.boolean().default(true)
 });
+
+const contentFieldTypesMap: Record<string, string[]> = {
+  'hero_banner': ['hero_title', 'hero_subtitle', 'hero_description', 'hero_image_url', 'cta_button_text', 'cta_button_link'],
+  'cta': ['cta_title', 'cta_description', 'cta_button_text', 'cta_button_link'],
+  'intro': ['section_title', 'section_subtitle', 'section_description'],
+  'feature_grid': ['features_title', 'features_list', 'feature_title', 'feature_description', 'feature_icon'],
+  'alternating_feature': ['section_title', 'paragraph_1', 'paragraph_2', 'image_url', 'button_text', 'button_link'],
+  'benefits_list': ['section_title', 'features_list'],
+  'comparison_table': ['section_title', 'plan_name', 'plan_features', 'plan_price', 'billing_cycle'],
+  'testimonial': ['testimonial_text', 'testimonial_author', 'testimonial_role', 'testimonial_company', 'testimonial_avatar_url'],
+  'client_logos': ['section_title', 'logo_url'],
+  'case_studies': ['section_title', 'post_title', 'post_excerpt', 'post_image_url', 'post_link'],
+  'media_mentions': ['section_title', 'logo_url', 'post_link'],
+  'product_showcase': ['services_title', 'services_list', 'image_url', 'description', 'button_text'],
+  'pricing_table': ['pricing_title', 'plan_name', 'plan_price', 'plan_features', 'plan_cta_text', 'plan_cta_link', 'billing_cycle'],
+  'stats': ['stat_title', 'stat_value', 'stat_description'],
+  'milestones': ['milestone_name', 'milestone_date', 'milestone_description'],
+  'blog_previews': ['post_title', 'post_excerpt', 'post_image_url', 'post_date', 'post_author', 'post_tags', 'post_link'],
+  'faq': ['faq_question', 'faq_answer'],
+  'contact_form': ['form_title', 'form_subtitle', 'form_name_label', 'form_email_label', 'form_message_label', 'form_submit_text', 'form_success_message', 'form_error_message'],
+  'contact_info': ['contact_title', 'contact_description', 'contact_address', 'contact_email', 'contact_phone', 'map_embed_url'],
+  'newsletter': ['section_title', 'form_email_label', 'form_submit_text'],
+  'resume': ['education_title', 'education_list', 'education_institution', 'education_degree', 'education_year', 'experience_title', 'experience_list', 'job_title', 'company_name', 'job_duration', 'job_description'],
+  'login_signup': ['form_title', 'form_name_label', 'form_email_label', 'form_submit_text'],
+  'navigation': ['nav_links', 'nav_link_text', 'nav_link_url', 'logo_url'],
+  'footer': ['footer_text', 'footer_links', 'sitemap_links', 'social_links'],
+  'utility': ['language_options', 'theme_toggle_text'],
+  'error_page': ['error_code', 'error_message'],
+  'default': ['title', 'subtitle', 'description', 'content', 'image_url', 'button_text', 'button_link']
+};
+
+const contentInputTypeMap: Record<string, string> = {
+  // Text fields
+  'hero_title': 'short_text',
+  'hero_subtitle': 'short_text',
+  'hero_description': 'long_text',
+  'cta_title': 'short_text',
+  'cta_description': 'long_text',
+  'section_title': 'short_text',
+  'section_subtitle': 'short_text',
+  'section_description': 'rich_text',
+  'title': 'short_text',
+  'subtitle': 'short_text', 
+  'description': 'long_text',
+  'content': 'rich_text',
+  'paragraph_1': 'rich_text',
+  'paragraph_2': 'rich_text',
+  
+  // URLs
+  'hero_image_url': 'image',
+  'image_url': 'image',
+  'logo_url': 'image',
+  'post_image_url': 'image',
+  'testimonial_avatar_url': 'image',
+  'map_embed_url': 'url',
+  'post_link': 'url',
+  'button_link': 'url',
+  'cta_button_link': 'url',
+  'plan_cta_link': 'url',
+  'nav_link_url': 'url',
+  
+  // Buttons & CTAs
+  'button_text': 'short_text',
+  'cta_button_text': 'short_text',
+  'form_submit_text': 'short_text',
+  'plan_cta_text': 'short_text',
+  
+  // Lists
+  'features_list': 'list_of_strings',
+  'plan_features': 'list_of_strings',
+  'education_list': 'list_of_objects',
+  'experience_list': 'list_of_objects',
+  'nav_links': 'list_of_objects',
+  'footer_links': 'list_of_objects',
+  'sitemap_links': 'list_of_objects',
+  'social_links': 'list_of_objects',
+  
+  // Contact & Form fields
+  'contact_email': 'email',
+  'contact_phone': 'phone_number',
+  'contact_address': 'long_text',
+  'contact_title': 'short_text',
+  'contact_description': 'long_text',
+  'form_title': 'short_text',
+  'form_subtitle': 'short_text',
+  'form_name_label': 'short_text',
+  'form_email_label': 'short_text',
+  'form_message_label': 'short_text',
+  'form_success_message': 'short_text',
+  'form_error_message': 'short_text',
+  
+  // Others
+  'testimonial_text': 'long_text',
+  'testimonial_author': 'short_text',
+  'testimonial_role': 'short_text',
+  'testimonial_company': 'short_text',
+  'feature_title': 'short_text',
+  'feature_description': 'long_text',
+  'feature_icon': 'icon_picker',
+  'services_title': 'short_text',
+  'services_list': 'list_of_objects',
+  'plan_name': 'short_text',
+  'plan_price': 'short_text',
+  'billing_cycle': 'select',
+  'pricing_title': 'short_text',
+  'stat_title': 'short_text',
+  'stat_value': 'short_text',
+  'stat_description': 'short_text',
+  'milestone_name': 'short_text',
+  'milestone_date': 'date',
+  'milestone_description': 'long_text',
+  'post_title': 'short_text',
+  'post_excerpt': 'long_text',
+  'post_date': 'date',
+  'post_author': 'short_text',
+  'post_tags': 'list_of_strings',
+  'faq_question': 'short_text',
+  'faq_answer': 'rich_text',
+  'education_title': 'short_text',
+  'education_institution': 'short_text',
+  'education_degree': 'short_text',
+  'education_year': 'short_text',
+  'experience_title': 'short_text',
+  'job_title': 'short_text',
+  'company_name': 'short_text',
+  'job_duration': 'short_text',
+  'job_description': 'long_text',
+  'language_options': 'list_of_strings',
+  'theme_toggle_text': 'short_text',
+  'error_code': 'short_text',
+  'error_message': 'short_text',
+  'nav_link_text': 'short_text',
+  'footer_text': 'rich_text'
+};
 
 export const ContentEditModal = ({
   isOpen,
@@ -92,183 +169,90 @@ export const ContentEditModal = ({
   itemData: any | null;
   onSubmit: (data: any) => void;
 }) => {
-  const [contentStyles, setContentStyles] = useState<Record<string, any>>({});
-  const [selectedSectionLayout, setSelectedSectionLayout] = useState<string>('');
+  const { selectedSection } = useAdmin();
   
+  const form = useForm<any>({
+    resolver: zodResolver(contentSchema),
+    defaultValues: itemData || {
+      section: selectedSection, // Default to selected section
+      content_type: '',
+      field_type: '',
+      content: '',
+      display_order: 0,
+      is_visible: true
+    },
+  });
+
+  const [currentFieldType, setCurrentFieldType] = React.useState<string>('');
+
   const { data: sections } = useQuery({
-    queryKey: ['all-sections'],
+    queryKey: ['admin-sections-for-dropdown'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('site_config')
-        .select('*')
-        .order('section_name', { ascending: true });
+        .select('section_name, layout_type')
+        .order('display_order', { ascending: true });
       
       if (error) throw error;
       return data;
     },
   });
 
-  const form = useForm<any>({
-    resolver: zodResolver(contentSchema),
-    defaultValues: itemData || {
-      section: '',
-      content_type: '',
-      field_type: '',
-      content: '',
-      display_order: 0,
-      is_visible: true,
-      content_format: 'short_text'
-    },
-  });
+  // Get field types based on section layout
+  const getFieldTypes = (sectionName: string) => {
+    if (!sections) return contentFieldTypesMap['default'];
+    
+    const section = sections.find(s => s.section_name === sectionName);
+    if (!section) return contentFieldTypesMap['default'];
+    
+    const layoutType = section.layout_type.toLowerCase().replace(/\s+/g, '_');
+    return contentFieldTypesMap[layoutType] || contentFieldTypesMap['default'];
+  };
 
-  const selectedSection = form.watch('section');
-  const selectedFieldType = form.watch('field_type');
-  
-  // Update field type options when section changes
-  useEffect(() => {
-    if (selectedSection && sections) {
-      const sectionConfig = sections.find(s => s.section_name === selectedSection);
-      if (sectionConfig) {
-        setSelectedSectionLayout(sectionConfig.layout_type);
-      }
-    }
-  }, [selectedSection, sections]);
-  
-  // Reset form when itemData changes
-  useEffect(() => {
+  // Get input type for field
+  const getInputType = (fieldType: string) => {
+    return contentInputTypeMap[fieldType] || 'short_text';
+  };
+
+  React.useEffect(() => {
     if (isOpen) {
-      const defaultValues = itemData || {
-        section: '',
+      const defaultData = itemData || {
+        section: selectedSection, // Default to selected section
         content_type: '',
         field_type: '',
         content: '',
         display_order: 0,
-        is_visible: true,
-        content_format: 'short_text'
+        is_visible: true
       };
+      form.reset(defaultData);
       
-      form.reset(defaultValues);
-      
-      // Set the content type based on field type if it's a new item
-      if (!itemData?.id && defaultValues.field_type && !defaultValues.content_type) {
-        form.setValue('content_type', defaultValues.field_type);
+      if (itemData?.field_type) {
+        setCurrentFieldType(getInputType(itemData.field_type));
       }
-      
-      // Reset content styles
-      setContentStyles({});
     }
-  }, [form, itemData, isOpen]);
+  }, [form, itemData, isOpen, selectedSection]);
 
-  // Handle form submission
+  const watchSection = form.watch('section');
+  const watchFieldType = form.watch('field_type');
+  
+  React.useEffect(() => {
+    if (watchFieldType) {
+      const inputType = getInputType(watchFieldType);
+      setCurrentFieldType(inputType);
+    }
+  }, [watchFieldType]);
+
   const handleSubmit = (data: any) => {
-    // Create a copy of the data without content_format which is just for the UI
-    const { content_format, ...submissionData } = data;
-    
-    // Auto-generate content_type if it's empty
-    if (!submissionData.content_type && submissionData.field_type) {
-      submissionData.content_type = submissionData.field_type;
+    // If field_type is not set, use content_type
+    if (!data.field_type) {
+      data.field_type = data.content_type;
     }
-    
-    onSubmit(submissionData);
-
-    // If we have content styles, also submit a style entry
-    if (contentStyles && Object.keys(contentStyles).length > 0) {
-      const styleData = {
-        ...submissionData,
-        content_type: `${submissionData.content_type}_style`,
-        content: JSON.stringify(contentStyles),
-      };
-      onSubmit(styleData);
-    }
-  };
-
-  // Get appropriate input component based on content format
-  const renderContentInput = () => {
-    const contentFormat = form.watch('content_format');
-    
-    switch(contentFormat) {
-      case 'long_text':
-        return (
-          <Textarea 
-            rows={5} 
-            {...form.register('content')} 
-          />
-        );
-      case 'rich_text':
-        return (
-          <StyledTextEditor 
-            value={form.watch('content')}
-            onChange={(value) => form.setValue('content', value)}
-            currentStyle={contentStyles}
-            onStyleChange={setContentStyles}
-            rows={5}
-          />
-        );
-      case 'color_picker':
-        return (
-          <Input 
-            type="color" 
-            {...form.register('content')} 
-            className="h-10 w-full" 
-          />
-        );
-      case 'date':
-        return (
-          <Input 
-            type="date" 
-            {...form.register('content')} 
-          />
-        );
-      case 'datetime':
-        return (
-          <Input 
-            type="datetime-local" 
-            {...form.register('content')} 
-          />
-        );
-      case 'boolean':
-        return (
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="content-boolean" 
-              checked={form.watch('content') === 'true'} 
-              onCheckedChange={(checked) => 
-                form.setValue('content', checked ? 'true' : 'false')
-              } 
-            />
-            <label htmlFor="content-boolean" className="text-sm font-medium">
-              {form.watch('content') === 'true' ? 'Yes' : 'No'}
-            </label>
-          </div>
-        );
-      case 'number':
-        return (
-          <Input 
-            type="number" 
-            {...form.register('content')} 
-          />
-        );
-      case 'list_of_strings':
-        return (
-          <Textarea 
-            rows={3} 
-            {...form.register('content')} 
-            placeholder="Enter comma-separated values"
-          />
-        );
-      // Add more format-specific inputs as needed
-      default:
-        return (
-          <Input 
-            {...form.register('content')} 
-          />
-        );
-    }
+    onSubmit(data);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{itemData?.id ? 'Edit Content Field' : 'Add Content Field'}</DialogTitle>
         </DialogHeader>
@@ -280,65 +264,53 @@ export const ContentEditModal = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Section</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      // Reset field_type when section changes
-                      form.setValue('field_type', '');
-                    }} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
+                  <FormControl>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select section" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-[200px]">
-                      {sections?.map(section => (
-                        <SelectItem key={section.id} value={section.section_name}>
-                          {section.section_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <SelectContent>
+                        {sections?.map((section) => (
+                          <SelectItem key={section.section_name} value={section.section_name}>
+                            {section.section_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="field_type"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Field Type</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      // Auto-set content_type to match field_type for new entries
-                      if (!itemData?.id) {
+                  <FormControl>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
                         form.setValue('content_type', value);
-                      }
-                    }} 
-                    defaultValue={field.value || ''}
-                    disabled={!selectedSection}
-                  >
-                    <FormControl>
+                      }}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder={!selectedSection ? "Select section first" : "Select field type"} />
+                        <SelectValue placeholder="Select field type" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-[200px]">
-                      {selectedSectionLayout && fieldTypesByLayout[selectedSectionLayout]?.map((fieldType) => (
-                        <SelectItem key={fieldType} value={fieldType}>
-                          {fieldType}
-                        </SelectItem>
-                      ))}
-                      {(!selectedSectionLayout || !fieldTypesByLayout[selectedSectionLayout]) && (
-                        <SelectItem value="custom">custom</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                      <SelectContent>
+                        {watchSection && getFieldTypes(watchSection).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type.replace(/_/g, ' ')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormDescription>
                     Select the type of field based on section layout
                   </FormDescription>
@@ -346,51 +318,6 @@ export const ContentEditModal = ({
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="content_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Content Type</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g. title, subtitle, content" />
-                  </FormControl>
-                  <FormDescription>
-                    Usually matches field type but can be customized
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="content_format"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Content Format</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || 'short_text'}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select content format" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="max-h-[200px]">
-                      {contentFormatTypes.map((format) => (
-                        <SelectItem key={format.value} value={format.value}>
-                          {format.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Determines how the content is edited and displayed
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="content"
@@ -398,13 +325,24 @@ export const ContentEditModal = ({
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    {renderContentInput()}
+                    {currentFieldType === 'rich_text' ? (
+                      <StyledTextEditor 
+                        value={field.value} 
+                        onChange={field.onChange} 
+                      />
+                    ) : currentFieldType === 'long_text' ? (
+                      <Textarea 
+                        {...field}
+                        className="min-h-[100px]"
+                      />
+                    ) : (
+                      <Input {...field} />
+                    )}
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="display_order"
@@ -422,7 +360,6 @@ export const ContentEditModal = ({
                 </FormItem>
               )}
             />
-            
             <FormField
               control={form.control}
               name="is_visible"
@@ -441,7 +378,6 @@ export const ContentEditModal = ({
                 </FormItem>
               )}
             />
-            
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
               <Button type="submit">Save</Button>
