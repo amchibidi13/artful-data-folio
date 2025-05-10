@@ -125,6 +125,7 @@ export const usePageByLink = (link: string) => {
   return useQuery({
     queryKey: ['page-by-link', link],
     queryFn: async () => {
+      // Using maybeSingle() instead of single() to fix the type recursion issue
       const { data, error } = await supabase
         .from('pages')
         .select('*')

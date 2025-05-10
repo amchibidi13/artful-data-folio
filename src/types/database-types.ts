@@ -1,3 +1,4 @@
+
 export interface SiteConfig {
   id: string;
   section_name: string;
