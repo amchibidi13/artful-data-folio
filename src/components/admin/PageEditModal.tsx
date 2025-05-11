@@ -15,7 +15,8 @@ const pageSchema = z.object({
   page_link: z.string().min(1, "Page link is required"),
   display_order: z.coerce.number().default(0),
   is_visible: z.boolean().default(true),
-  is_system_page: z.boolean().default(false)
+  is_system_page: z.boolean().default(false),
+  include_in_navigation: z.boolean().default(false)
 });
 
 export const PageEditModal = ({
@@ -36,7 +37,8 @@ export const PageEditModal = ({
       page_link: '',
       display_order: 0,
       is_visible: true,
-      is_system_page: false
+      is_system_page: false,
+      include_in_navigation: false
     },
   });
 
@@ -47,7 +49,8 @@ export const PageEditModal = ({
         page_link: '',
         display_order: 0,
         is_visible: true,
-        is_system_page: false
+        is_system_page: false,
+        include_in_navigation: false
       };
       
       // If new page or page_link is empty, set it from page_name
@@ -139,6 +142,24 @@ export const PageEditModal = ({
                   <div className="space-y-1 leading-none">
                     <FormLabel>Visible</FormLabel>
                     <FormDescription>Show this page on the website</FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="include_in_navigation"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange} 
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Include in Navigation</FormLabel>
+                    <FormDescription>Show this page in the navigation menu</FormDescription>
                   </div>
                 </FormItem>
               )}

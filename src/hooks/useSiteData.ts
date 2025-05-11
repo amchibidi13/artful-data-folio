@@ -255,7 +255,7 @@ export const useSiteStructure = () => {
           return {
             ...section,
             content,
-            // Add fields property to fix the type error in SiteMapTab
+            // Add fields property to reference the content
             fields: content
           };
         }));

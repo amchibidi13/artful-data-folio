@@ -86,6 +86,7 @@ export type Database = {
           created_at: string
           display_order: number
           id: string
+          include_in_navigation: boolean
           is_system_page: boolean
           is_visible: boolean
           page_link: string | null
@@ -96,6 +97,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          include_in_navigation?: boolean
           is_system_page?: boolean
           is_visible?: boolean
           page_link?: string | null
@@ -106,6 +108,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          include_in_navigation?: boolean
           is_system_page?: boolean
           is_visible?: boolean
           page_link?: string | null
