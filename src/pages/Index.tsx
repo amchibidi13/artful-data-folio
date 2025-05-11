@@ -17,6 +17,10 @@ interface IndexProps {
   initialPage?: string;
 }
 
+interface SectionComponentProps {
+  sectionName: string;
+}
+
 const Index: React.FC<IndexProps> = ({ initialPage }) => {
   const { data: allSiteConfig, isLoading } = useSiteConfig();
   const { toast } = useToast();
@@ -58,12 +62,12 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
   }, [allSiteConfig, finalPageName]);
 
   // Map section names to components
-  const sectionComponents: Record<string, (props: { sectionName: string }) => React.ReactNode> = {
-    'hero': ({ sectionName }) => <HeroSection key={sectionName} sectionName={sectionName} />,
-    'about': ({ sectionName }) => <AboutSection key={sectionName} sectionName={sectionName} />,
-    'projects': ({ sectionName }) => <ProjectsSection key={sectionName} sectionName={sectionName} />,
-    'articles': ({ sectionName }) => <ArticlesSection key={sectionName} sectionName={sectionName} />,
-    'contact': ({ sectionName }) => <ContactSection key={sectionName} sectionName={sectionName} />
+  const sectionComponents: Record<string, React.FC<SectionComponentProps>> = {
+    'hero': HeroSection,
+    'about': AboutSection,
+    'projects': ProjectsSection,
+    'articles': ArticlesSection,
+    'contact': ContactSection
   };
 
   // Loading skeleton for sections

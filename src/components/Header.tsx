@@ -17,8 +17,12 @@ const Header: React.FC = () => {
 
   const visiblePages = React.useMemo(() => {
     if (!pages) return [];
-    // Only include system pages and pages explicitly marked for header navigation
-    return pages.filter(page => page.is_visible && !page.is_system_page && page.include_in_navigation);
+    // Only include pages explicitly marked for header navigation and that are visible
+    return pages.filter(page => 
+      page.is_visible && 
+      !page.is_system_page && 
+      page.include_in_navigation === true
+    );
   }, [pages]);
 
   // Determine which navigation items to show based on the current page

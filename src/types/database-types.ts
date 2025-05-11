@@ -69,6 +69,7 @@ export interface Page {
   page_link: string | null;
   created_at: string;
   updated_at: string;
+  include_in_navigation: boolean;
 }
 
 // New interfaces for insert operations
@@ -129,7 +130,7 @@ export interface ArticleInsert {
   date?: string;
   link?: string | null;
   created_at?: string;
-  updated_at?: string;
+  updated_at: string;
 }
 
 export interface PageInsert {
@@ -139,6 +140,7 @@ export interface PageInsert {
   display_order?: number;
   is_visible?: boolean;
   is_system_page?: boolean;
+  include_in_navigation?: boolean;
   created_at?: string;
   updated_at?: string;
 }
