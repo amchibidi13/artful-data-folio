@@ -94,7 +94,7 @@ export const SectionTab = ({
         return 'Text';
       case 'textarea':
         return 'Long Text';
-      case 'rich_text': // Fixed this type by adding it to the switch statement
+      case 'rich_text':
         return 'Rich Text';
       case 'image':
         return 'Image URL';
@@ -117,6 +117,12 @@ export const SectionTab = ({
     }
   };
 
+  // Process page list to ensure the home page is included
+  const pagesList = React.useMemo(() => {
+    if (!pages) return [];
+    return pages.filter(page => page.page_name !== 'admin');
+  }, [pages]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -131,12 +137,14 @@ export const SectionTab = ({
                 <div className="p-2">
                   <Skeleton className="h-4 w-full" />
                 </div>
-              ) : (
-                pages?.map((page) => (
+              ) : pagesList.length > 0 ? (
+                pagesList.map((page) => (
                   <SelectItem key={page.id} value={page.page_name}>
                     {page.page_name}
                   </SelectItem>
                 ))
+              ) : (
+                <div className="p-2 text-sm">No pages found</div>
               )}
             </SelectContent>
           </Select>
@@ -153,12 +161,14 @@ export const SectionTab = ({
                 <div className="p-2">
                   <Skeleton className="h-4 w-full" />
                 </div>
-              ) : (
-                sections?.map((section) => (
+              ) : sections && sections.length > 0 ? (
+                sections.map((section) => (
                   <SelectItem key={section.id} value={section.section_name}>
                     {section.section_name}
                   </SelectItem>
                 ))
+              ) : (
+                <div className="p-2 text-sm">No sections found for this page</div>
               )}
             </SelectContent>
           </Select>

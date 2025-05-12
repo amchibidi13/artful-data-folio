@@ -30,8 +30,20 @@ const router = createBrowserRouter([
     element: <SearchResults />,
   },
   {
-    path: '/:pageLink',
-    element: <Index />,
+    path: '/home',
+    element: <Index initialPage="home" />,
+  },
+  {
+    path: '/about',
+    element: <Index initialPage="about" />,
+  },
+  {
+    path: '/projects',
+    element: <Index initialPage="projects" />,
+  },
+  {
+    path: '/contact',
+    element: <Index initialPage="contact" />,
   },
   {
     path: '*',

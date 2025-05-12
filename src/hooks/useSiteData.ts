@@ -127,6 +127,20 @@ export const fieldTypeMappings = {
     'subtitle',
     'case_studies',
   ],
+  header: [
+    'site_title',
+    'logo_image',
+    'navigation_style',
+    'search_placeholder'
+  ],
+  footer: [
+    'company_name',
+    'company_description',
+    'copyright_text',
+    'contact_email',
+    'social_media_links',
+    'quick_links'
+  ],
 };
 
 // Helper function to determine the input type based on field type
@@ -162,6 +176,12 @@ export const getFieldInputType = (fieldName: string) => {
   } else if (fieldName.includes('features')) {
     return 'json';
   } else if (fieldName.includes('testimonials')) {
+    return 'json';
+  } else if (fieldName.includes('copyright')) {
+    return 'text';
+  } else if (fieldName.includes('social_media')) {
+    return 'json';
+  } else if (fieldName.includes('quick_links')) {
     return 'json';
   } else {
     return 'text';

@@ -1,7 +1,44 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { useSiteContent } from '@/hooks/useSiteData';
 
 const Footer: React.FC = () => {
+  const { data: footerContent } = useSiteContent('footer');
+  
+  // Get footer content from site content or use defaults
+  const companyName = React.useMemo(() => {
+    if (footerContent) {
+      const content = footerContent.find(content => content.content_type === 'company_name');
+      return content ? content.content : 'DataFolio';
+    }
+    return 'DataFolio';
+  }, [footerContent]);
+  
+  const companyDescription = React.useMemo(() => {
+    if (footerContent) {
+      const content = footerContent.find(content => content.content_type === 'company_description');
+      return content ? content.content : 'A portfolio showcasing data science projects, articles, and insights.';
+    }
+    return 'A portfolio showcasing data science projects, articles, and insights.';
+  }, [footerContent]);
+  
+  const copyrightText = React.useMemo(() => {
+    if (footerContent) {
+      const content = footerContent.find(content => content.content_type === 'copyright_text');
+      return content ? content.content : `© ${new Date().getFullYear()} ${companyName}. All rights reserved.`;
+    }
+    return `© ${new Date().getFullYear()} ${companyName}. All rights reserved.`;
+  }, [footerContent, companyName]);
+  
+  const contactEmail = React.useMemo(() => {
+    if (footerContent) {
+      const content = footerContent.find(content => content.content_type === 'contact_email');
+      return content ? content.content : 'contact@example.com';
+    }
+    return 'contact@example.com';
+  }, [footerContent]);
+
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="container">
@@ -9,12 +46,12 @@ const Footer: React.FC = () => {
           <div>
             <div className="flex gap-1.5 items-center">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-data-blue to-data-purple flex items-center justify-center">
-                <span className="text-white font-semibold">DS</span>
+                <span className="text-white font-semibold">{companyName.substring(0, 2)}</span>
               </div>
-              <span className="font-semibold text-lg">DataFolio</span>
+              <span className="font-semibold text-lg">{companyName}</span>
             </div>
             <p className="mt-4 text-gray-400 max-w-xs">
-              A portfolio showcasing data science projects, articles, and insights.
+              {companyDescription}
             </p>
           </div>
           
@@ -22,24 +59,19 @@ const Footer: React.FC = () => {
             <h3 className="font-semibold text-xl mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#projects" className="text-gray-400 hover:text-white transition-colors">
+                <Link to="/projects" className="text-gray-400 hover:text-white transition-colors">
                   Projects
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#articles" className="text-gray-400 hover:text-white transition-colors">
-                  Articles
-                </a>
-              </li>
-              <li>
-                <a href="#about" className="text-gray-400 hover:text-white transition-colors">
+                <Link to="/about" className="text-gray-400 hover:text-white transition-colors">
                   About
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#contact" className="text-gray-400 hover:text-white transition-colors">
+                <Link to="/contact" className="text-gray-400 hover:text-white transition-colors">
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -61,13 +93,13 @@ const Footer: React.FC = () => {
               </a>
             </div>
             <p className="mt-4 text-gray-400">
-              Email: <a href="mailto:contact@example.com" className="hover:text-white transition-colors">contact@example.com</a>
+              Email: <a href={`mailto:${contactEmail}`} className="hover:text-white transition-colors">{contactEmail}</a>
             </p>
           </div>
         </div>
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} DataFolio. All rights reserved.</p>
+          <p>{copyrightText}</p>
         </div>
       </div>
     </footer>

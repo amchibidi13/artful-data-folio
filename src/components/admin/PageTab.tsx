@@ -84,7 +84,8 @@ export const PageTab = ({
       'resume': 'Resume',
       'login': 'Login / Signup',
       'navigation': 'Navigation Bar',
-      'footer': 'Footer',
+      'header': 'Header Section',
+      'footer': 'Footer Section',
       'utility': 'Utility',
       'error': 'Error Page',
       'gallery': 'Image Gallery',
@@ -97,6 +98,12 @@ export const PageTab = ({
     
     return layoutMap[layoutType] || layoutType;
   };
+
+  // Process page list to ensure all pages including home are included
+  const pagesList = React.useMemo(() => {
+    if (!pages) return [];
+    return pages.filter(page => page.page_name !== 'admin');
+  }, [pages]);
 
   return (
     <div className="space-y-6">
@@ -112,19 +119,14 @@ export const PageTab = ({
                 <div className="p-2">
                   <Skeleton className="h-4 w-full" />
                 </div>
+              ) : pagesList.length > 0 ? (
+                pagesList.map((page) => (
+                  <SelectItem key={page.id} value={page.page_name}>
+                    {page.page_name}
+                  </SelectItem>
+                ))
               ) : (
-                [
-                  <SelectItem key="site" value="site">Site</SelectItem>,
-                  <SelectItem key="home" value="home">Home</SelectItem>,
-                  ...(pages?.filter(page => page.page_name !== 'admin' && 
-                                           page.page_name !== 'site' && 
-                                           page.page_name !== 'home')
-                          .map((page) => (
-                    <SelectItem key={page.id} value={page.page_name}>
-                      {page.page_name}
-                    </SelectItem>
-                  )) || [])
-                ]
+                <div className="p-2 text-sm">No pages found</div>
               )}
             </SelectContent>
           </Select>
