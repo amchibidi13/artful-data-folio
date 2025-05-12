@@ -1,3 +1,4 @@
+
 export interface SiteConfig {
   id: string;
   section_name: string;
@@ -21,6 +22,7 @@ export interface SiteContent {
   created_at: string;
   updated_at: string;
   field_type?: string | null;
+  include_in_global_search?: boolean;
 }
 
 export interface NavigationItem {
@@ -72,6 +74,17 @@ export interface Page {
   include_in_navigation: boolean;
 }
 
+export interface SearchResult {
+  id: string;
+  content_id: string;
+  section: string;
+  page: string;
+  field_type: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // New interfaces for insert operations
 export interface SiteConfigInsert {
   id?: string;
@@ -94,6 +107,7 @@ export interface SiteContentInsert {
   field_type?: string | null;
   display_order?: number;
   is_visible?: boolean;
+  include_in_global_search?: boolean;
   created_at?: string;
   updated_at?: string;
 }

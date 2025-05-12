@@ -94,6 +94,8 @@ export const SectionTab = ({
         return 'Text';
       case 'textarea':
         return 'Long Text';
+      case 'rich_text':
+        return 'Rich Text';
       case 'image':
         return 'Image URL';
       case 'url':
@@ -130,7 +132,7 @@ export const SectionTab = ({
                   <Skeleton className="h-4 w-full" />
                 </div>
               ) : (
-                pages?.filter(page => page.page_name !== 'admin').map((page) => (
+                pages?.map((page) => (
                   <SelectItem key={page.id} value={page.page_name}>
                     {page.page_name}
                   </SelectItem>
@@ -183,13 +185,14 @@ export const SectionTab = ({
             <TableHead>Field Type</TableHead>
             <TableHead>Input Type</TableHead>
             <TableHead>Visibility</TableHead>
+            <TableHead>In Search</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {contentLoading ? (
             <TableRow>
-              <TableCell colSpan={5}>
+              <TableCell colSpan={6}>
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
@@ -208,6 +211,7 @@ export const SectionTab = ({
                   {getInputTypeLabel(content.field_type || content.content_type)}
                 </TableCell>
                 <TableCell>{content.is_visible ? 'Visible' : 'Hidden'}</TableCell>
+                <TableCell>{content.include_in_global_search ? 'Yes' : 'No'}</TableCell>
                 <TableCell className="space-x-2">
                   <Button 
                     variant="ghost" 
@@ -228,7 +232,7 @@ export const SectionTab = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="text-center">
+              <TableCell colSpan={6} className="text-center">
                 {selectedSection ? 'No content fields found for this section' : 'Please select a section'}
               </TableCell>
             </TableRow>

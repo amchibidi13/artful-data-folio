@@ -59,6 +59,24 @@ export const PageTab = ({
     onDelete('section', section);
   };
 
+  const getLayoutTypeName = (layoutType: string) => {
+    const layoutMap: {[key: string]: string} = {
+      'hero': 'Hero Banner',
+      'cta': 'Call to Action',
+      'intro': 'Introduction',
+      'features': 'Feature Grid',
+      'alternating': 'Alternating Features',
+      'benefits': 'Benefits List',
+      'comparison': 'Comparison Table',
+      'testimonials': 'Testimonial',
+      'clients': 'Client Logos',
+      'cases': 'Case Studies',
+      'default': 'Default',
+    };
+    
+    return layoutMap[layoutType] || layoutType;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -74,7 +92,7 @@ export const PageTab = ({
                   <Skeleton className="h-4 w-full" />
                 </div>
               ) : (
-                pages?.filter(page => page.page_name !== 'admin').map((page) => (
+                pages?.map((page) => (
                   <SelectItem key={page.id} value={page.page_name}>
                     {page.page_name}
                   </SelectItem>
@@ -83,13 +101,13 @@ export const PageTab = ({
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={handleAdd} className="mt-6">
+        <Button onClick={handleAdd} className="mt-6" disabled={!selectedPage}>
           <Plus className="mr-2 h-4 w-4" /> Add Section
         </Button>
       </div>
       
       <Table>
-        <TableCaption>List of sections for {selectedPage} page</TableCaption>
+        <TableCaption>List of sections for {selectedPage || 'selected'} page</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>Display Order</TableHead>
@@ -116,7 +134,7 @@ export const PageTab = ({
               <TableRow key={section.id}>
                 <TableCell>{section.display_order}</TableCell>
                 <TableCell className="font-medium">{section.section_name}</TableCell>
-                <TableCell>{section.layout_type}</TableCell>
+                <TableCell>{getLayoutTypeName(section.layout_type)}</TableCell>
                 <TableCell>{section.is_visible ? 'Visible' : 'Hidden'}</TableCell>
                 <TableCell>
                   {section.background_color && (

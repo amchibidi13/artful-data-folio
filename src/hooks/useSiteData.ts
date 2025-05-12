@@ -71,11 +71,70 @@ export const fieldTypeMappings = {
     'subtitle_style',
     'content_style',
   ],
+  hero: [
+    'title',
+    'subtitle',
+    'description',
+    'button_text',
+    'button_url',
+    'background_image',
+    'primary_image',
+  ],
+  cta: [
+    'title',
+    'description',
+    'button_text',
+    'button_url',
+  ],
+  intro: [
+    'title',
+    'subtitle',
+    'content',
+    'image_url',
+  ],
+  features: [
+    'title',
+    'subtitle',
+    'features_list',
+    'description',
+  ],
+  alternating: [
+    'title',
+    'features',
+    'description',
+  ],
+  benefits: [
+    'title',
+    'subtitle',
+    'benefits_list',
+  ],
+  comparison: [
+    'title',
+    'description',
+    'comparison_items',
+  ],
+  testimonials: [
+    'title',
+    'subtitle',
+    'testimonials_list',
+  ],
+  clients: [
+    'title',
+    'subtitle',
+    'logos',
+  ],
+  cases: [
+    'title',
+    'subtitle',
+    'case_studies',
+  ],
 };
 
 // Helper function to determine the input type based on field type
 export const getFieldInputType = (fieldName: string) => {
-  if (fieldName.includes('image') || fieldName.includes('photo') || fieldName.includes('avatar')) {
+  if (!fieldName) return 'text';
+  
+  if (fieldName.includes('image') || fieldName.includes('photo') || fieldName.includes('avatar') || fieldName.includes('logo')) {
     return 'image';
   } else if (fieldName.includes('url') || fieldName.includes('link')) {
     return 'url';
@@ -92,6 +151,16 @@ export const getFieldInputType = (fieldName: string) => {
   } else if (fieldName.includes('list')) {
     return 'list';
   } else if (fieldName.includes('style')) {
+    return 'json';
+  } else if (fieldName.includes('title')) {
+    return 'text';
+  } else if (fieldName.includes('subtitle')) {
+    return 'text';
+  } else if (fieldName.includes('name')) {
+    return 'text';
+  } else if (fieldName.includes('features')) {
+    return 'json';
+  } else if (fieldName.includes('testimonials')) {
     return 'json';
   } else {
     return 'text';
@@ -158,18 +227,22 @@ export const usePageByLink = (pageLink: string) => {
 };
 
 // Fetch site configuration
-export const useSiteConfig = () => {
+export const useSiteConfig = (pageName?: string) => {
   return useQuery({
-    queryKey: ['site_config'],
+    queryKey: ['site_config', pageName],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('site_config')
-        .select('*')
-        .order('display_order', { ascending: true });
+      const query = supabase.from('site_config').select('*');
+      
+      if (pageName) {
+        query.eq('page', pageName);
+      }
+      
+      const { data, error } = await query.order('display_order', { ascending: true });
       
       if (error) throw error;
       return data;
     },
+    enabled: true, // Always enabled, even without pageName
   });
 };
 
@@ -251,7 +324,7 @@ export const useSiteStructure = () => {
           
           if (contentError) throw contentError;
 
-          // Return section with its content that we'll use as "fields"
+          // Return section with its content
           return {
             ...section,
             content,
@@ -268,5 +341,25 @@ export const useSiteStructure = () => {
 
       return pagesWithSections;
     },
+  });
+};
+
+// Search function
+export const useSearchContent = (query: string) => {
+  return useQuery({
+    queryKey: ['search', query],
+    queryFn: async () => {
+      if (!query.trim()) return [];
+      
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('*')
+        .filter('include_in_global_search', 'eq', true)
+        .textSearch('content', query);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!query.trim(),
   });
 };

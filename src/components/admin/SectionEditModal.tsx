@@ -36,7 +36,12 @@ const layoutOptions = [
   { value: 'navigation', label: 'Navigation Bar' },
   { value: 'footer', label: 'Footer / Sitemap' },
   { value: 'utility', label: 'Utility / Settings' },
-  { value: 'error', label: '404 / Error Page' }
+  { value: 'error', label: '404 / Error Page' },
+  { value: 'gallery', label: 'Image Gallery' },
+  { value: 'video', label: 'Video Section' },
+  { value: 'portfolio', label: 'Portfolio Showcase' },
+  { value: 'team', label: 'Team Members' },
+  { value: 'timeline', label: 'Timeline' }
 ];
 
 const sectionSchema = z.object({
@@ -132,11 +137,40 @@ export const SectionEditModal = ({
             />
             <FormField
               control={form.control}
+              name="page"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Page</FormLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select page" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-[200px]">
+                      <SelectItem value="home">Home</SelectItem>
+                      <SelectItem value="about">About</SelectItem>
+                      <SelectItem value="contact">Contact</SelectItem>
+                      <SelectItem value="blog">Blog</SelectItem>
+                      <SelectItem value="services">Services</SelectItem>
+                      <SelectItem value="portfolio">Portfolio</SelectItem>
+                      <SelectItem value="site">Site</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the page where this section will appear
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="layout_type"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Layout Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select layout type" />
