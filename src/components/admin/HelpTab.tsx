@@ -1,221 +1,306 @@
 
 import React, { useState } from 'react';
-import { useFieldTypesMapping } from '@/hooks/useSiteData';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getFieldInputType } from '@/hooks/useSiteData';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { useQuery } from '@tanstack/react-query';
+import { fieldTypeMappings, getFieldInputType } from '@/hooks/useSiteData';
 
-export const HelpTab = () => {
-  const { data: fieldTypeMappings } = useFieldTypesMapping();
-  const [searchTerm, setSearchTerm] = useState('');
+const HelpTab = () => {
+  const [layoutSearchTerm, setLayoutSearchTerm] = useState('');
   const [fieldTypeSearchTerm, setFieldTypeSearchTerm] = useState('');
   
-  const filteredMappings = fieldTypeMappings ? 
-    Object.entries(fieldTypeMappings).filter(([layout, fields]) => 
-      layout.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      (Array.isArray(fields) && fields.some((field: string) => 
-        field.toLowerCase().includes(searchTerm.toLowerCase())
-      ))
-    ) : [];
+  // Query field type mappings
+  const { data: mappings } = useQuery({
+    queryKey: ['field_type_mappings'],
+    queryFn: () => {
+      return fieldTypeMappings;
+    }
+  });
+
+  // Create a list of all layout types and their field types
+  const layoutToFields = React.useMemo(() => {
+    if (!mappings) return [];
     
-  const layouts = [
-    { id: 'hero', name: 'Hero Banner', description: 'A full-width banner at the top of a page.' },
-    { id: 'cta', name: 'Call to Action', description: 'A section that drives user engagement with buttons.' },
-    { id: 'intro', name: 'Introduction', description: 'Introduces the page content to visitors.' },
-    { id: 'feature_grid', name: 'Feature Grid', description: 'Grid layout to display features or services.' },
-    { id: 'alternating', name: 'Alternating Features', description: 'Features displayed in alternating text/image pattern.' },
-    { id: 'benefits', name: 'Benefits List', description: 'List of benefits or advantages.' },
-    { id: 'comparison', name: 'Comparison Table', description: 'Compares different products/services/plans.' },
-    { id: 'testimonials', name: 'Testimonial', description: 'Customer reviews and testimonials.' },
-    { id: 'clients', name: 'Client Logos', description: 'Showcase client logos.' },
-    { id: 'cases', name: 'Case Studies', description: 'Project case studies or success stories.' },
-    { id: 'media', name: 'Media Mentions', description: 'Media coverage and press mentions.' },
-    { id: 'products', name: 'Product Showcase', description: 'Display products or services details.' },
-    { id: 'pricing', name: 'Pricing Table', description: 'Pricing plans comparison.' },
-    { id: 'stats', name: 'Stats Section', description: 'Key metrics and statistics.' },
-    { id: 'milestones', name: 'Milestones', description: 'Company or project milestones.' },
-    { id: 'blog', name: 'Blog Previews', description: 'Preview of blog posts.' },
-    { id: 'faq', name: 'FAQ Section', description: 'Frequently asked questions.' },
-    { id: 'contact_form', name: 'Contact Form', description: 'Form for user inquiries.' },
-    { id: 'contact_info', name: 'Contact Info', description: 'Contact details and map.' },
-    { id: 'newsletter', name: 'Newsletter Signup', description: 'Email subscription form.' },
-    { id: 'resume', name: 'Resume Section', description: 'Professional experience and education.' },
-    { id: 'login', name: 'Login Section', description: 'User authentication form.' },
-    { id: 'navigation', name: 'Navigation Bar', description: 'Site navigation menu.' },
-    { id: 'footer', name: 'Footer', description: 'Page footer with site information.' },
-    { id: 'gallery', name: 'Image Gallery', description: 'Collection of images in grid or carousel.' },
-    { id: 'video', name: 'Video Section', description: 'Embedded video content.' },
-    { id: 'portfolio', name: 'Portfolio Showcase', description: 'Display of projects or work samples.' },
-    { id: 'team', name: 'Team Members', description: 'Team profiles and information.' },
-    { id: 'timeline', name: 'Timeline', description: 'Chronological display of events.' },
-  ];
-
-  const fieldTypes = [
-    { id: 'short_text', name: 'Short Text', description: 'Single line text field (titles, names, etc)' },
-    { id: 'long_text', name: 'Long Text', description: 'Multi-line text field for paragraphs' },
-    { id: 'rich_text', name: 'Rich Text', description: 'Text with formatting options' },
-    { id: 'image', name: 'Image URL', description: 'URL to an image' },
-    { id: 'url', name: 'URL', description: 'A link to another page or website' },
-    { id: 'list_of_strings', name: 'List of Strings', description: 'Comma-separated list of text items' },
-    { id: 'list_of_objects', name: 'JSON List', description: 'List of structured data objects in JSON format' },
-    { id: 'date', name: 'Date', description: 'Date picker field' },
-    { id: 'email', name: 'Email', description: 'Email address field' },
-    { id: 'phone_number', name: 'Phone Number', description: 'Phone number field' },
-    { id: 'select', name: 'Select', description: 'Dropdown selection field' },
-    { id: 'icon_picker', name: 'Icon Picker', description: 'Pick an icon from a library' },
-  ];
+    return Object.entries(mappings).map(([layout, fields]) => ({
+      layout,
+      fields: fields as string[]
+    }));
+  }, [mappings]);
   
-  // This will be used for the field type to input type mapping
-  const fieldTypeToInputTypeMapping = [
-    { fieldType: 'short_text', inputType: 'text', description: 'Single line text input' },
-    { fieldType: 'long_text', inputType: 'textarea', description: 'Multi-line text area' },
-    { fieldType: 'rich_text', inputType: 'rich_text', description: 'Rich text editor with formatting' },
-    { fieldType: 'image', inputType: 'image', description: 'Image URL or upload field' },
-    { fieldType: 'url', inputType: 'url', description: 'URL input with validation' },
-    { fieldType: 'list_of_strings', inputType: 'list', description: 'Comma-separated list input' },
-    { fieldType: 'list_of_objects', inputType: 'json', description: 'JSON editor for structured data' },
-    { fieldType: 'date', inputType: 'date', description: 'Date picker calendar' },
-    { fieldType: 'email', inputType: 'email', description: 'Email input with validation' },
-    { fieldType: 'phone_number', inputType: 'phone', description: 'Phone number input with formatting' },
-    { fieldType: 'select', inputType: 'select', description: 'Dropdown selection list' },
-    { fieldType: 'icon_picker', inputType: 'select', description: 'Icon selection dropdown' },
-    { fieldType: 'title', inputType: 'text', description: 'Title text input' },
-    { fieldType: 'subtitle', inputType: 'text', description: 'Subtitle text input' },
-    { fieldType: 'description', inputType: 'textarea', description: 'Description text area' },
-    { fieldType: 'content', inputType: 'textarea', description: 'Content text area or rich editor' },
-    { fieldType: 'button_text', inputType: 'text', description: 'Button label text' },
-    { fieldType: 'button_url', inputType: 'url', description: 'Button target URL' },
-    { fieldType: 'background_image', inputType: 'image', description: 'Background image URL' },
-    { fieldType: 'color', inputType: 'color', description: 'Color picker' },
-  ];
+  // Filter layout to fields based on search term
+  const filteredLayoutToFields = React.useMemo(() => {
+    if (!layoutToFields) return [];
+    if (!layoutSearchTerm) return layoutToFields;
+    
+    const lowerSearchTerm = layoutSearchTerm.toLowerCase();
+    
+    return layoutToFields.filter(item => 
+      item.layout.toLowerCase().includes(lowerSearchTerm) || 
+      item.fields.some(field => field.toLowerCase().includes(lowerSearchTerm))
+    );
+  }, [layoutToFields, layoutSearchTerm]);
 
-  const filteredFieldTypeMapping = fieldTypeToInputTypeMapping.filter(item =>
-    item.fieldType.toLowerCase().includes(fieldTypeSearchTerm.toLowerCase()) ||
-    item.inputType.toLowerCase().includes(fieldTypeSearchTerm.toLowerCase()) ||
-    item.description.toLowerCase().includes(fieldTypeSearchTerm.toLowerCase())
-  );
+  // Generate list of all field types and their input types
+  const fieldTypeToInputType = React.useMemo(() => {
+    if (!mappings) return [];
+    
+    const allFields = new Set<string>();
+    
+    // Collect all unique field types
+    Object.values(mappings).forEach(fields => {
+      (fields as string[]).forEach(field => {
+        allFields.add(field);
+      });
+    });
+    
+    // Map field types to input types
+    return Array.from(allFields).map(fieldType => ({
+      fieldType,
+      inputType: getFieldInputType(fieldType)
+    })).sort((a, b) => a.fieldType.localeCompare(b.fieldType));
+  }, [mappings]);
+  
+  // Filter field types to input types based on search term
+  const filteredFieldTypeToInputType = React.useMemo(() => {
+    if (!fieldTypeToInputType) return [];
+    if (!fieldTypeSearchTerm) return fieldTypeToInputType;
+    
+    const lowerSearchTerm = fieldTypeSearchTerm.toLowerCase();
+    
+    return fieldTypeToInputType.filter(item => 
+      item.fieldType.toLowerCase().includes(lowerSearchTerm) || 
+      item.inputType.toLowerCase().includes(lowerSearchTerm)
+    );
+  }, [fieldTypeToInputType, fieldTypeSearchTerm]);
+
+  // Map input type to display name
+  const getInputTypeDisplay = (inputType: string) => {
+    switch(inputType) {
+      case 'text': return 'Short Text';
+      case 'textarea': return 'Long Text';
+      case 'rich_text': return 'Rich Text';
+      case 'image': return 'Image URL';
+      case 'url': return 'URL';
+      case 'list': return 'List of Strings';
+      case 'json': return 'JSON List';
+      case 'date': return 'Date';
+      case 'email': return 'Email';
+      case 'password': return 'Password';
+      case 'color': return 'Color';
+      default: return inputType;
+    }
+  };
   
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Help & Documentation</h2>
+    <Tabs defaultValue="section-layouts">
+      <TabsList className="mb-4">
+        <TabsTrigger value="section-layouts">Section Layouts</TabsTrigger>
+        <TabsTrigger value="layout-field-mapping">Section Layout to Field Type Mapping</TabsTrigger>
+        <TabsTrigger value="field-input-mapping">Field Type to Input Type Mapping</TabsTrigger>
+      </TabsList>
       
-      <Tabs defaultValue="layouts" className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="layouts">Section Layouts</TabsTrigger>
-          <TabsTrigger value="fields">Field Types</TabsTrigger>
-          <TabsTrigger value="field-input-mapping">Field to Input Mapping</TabsTrigger>
-          <TabsTrigger value="mapping">Section Layout to Field Mapping</TabsTrigger>
-        </TabsList>
-
-        {/* Section Layouts tab */}
-        <TabsContent value="layouts" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {layouts.map(layout => (
-              <Card key={layout.id}>
-                <CardHeader className="py-4">
-                  <CardTitle className="text-md">{layout.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CardDescription>{layout.description}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Field Types tab */}
-        <TabsContent value="fields" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fieldTypes.map(field => (
-              <Card key={field.id}>
-                <CardHeader className="py-4">
-                  <CardTitle className="text-md">{field.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CardDescription>{field.description}</CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Field Type to Input Type Mapping tab */}
-        <TabsContent value="field-input-mapping" className="space-y-4">
-          <Input 
-            placeholder="Search field types or input types..." 
-            value={fieldTypeSearchTerm}
-            onChange={(e) => setFieldTypeSearchTerm(e.target.value)}
-            className="max-w-md mb-4"
-          />
-          
-          <Table>
-            <TableCaption>Field Type to Input Type Mapping</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Field Type</TableHead>
-                <TableHead>Input Type</TableHead>
-                <TableHead>Description</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFieldTypeMapping.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{item.fieldType}</TableCell>
-                  <TableCell>{item.inputType}</TableCell>
-                  <TableCell>{item.description}</TableCell>
-                </TableRow>
-              ))}
-              {filteredFieldTypeMapping.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center">No mappings found matching your search</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TabsContent>
-
-        {/* Section Layout to Field Mapping tab */}
-        <TabsContent value="mapping" className="space-y-4">
-          <Input 
-            placeholder="Search layouts or field types..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-md mb-4"
-          />
-          
-          <Accordion type="single" collapsible className="w-full">
-            {filteredMappings.map(([layout, fields]) => (
-              <AccordionItem key={layout} value={layout}>
-                <AccordionTrigger className="text-md font-medium">
-                  {layout.replace(/_/g, ' ')}
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="pl-4 border-l-2 border-muted space-y-2">
-                    <p className="mb-2 text-sm text-muted-foreground">Available fields for this layout:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {Array.isArray(fields) && fields.map((field: string) => (
-                        <li key={field} className="text-sm">
-                          {field.replace(/_/g, ' ')}
-                        </li>
-                      ))}
-                    </ul>
+      <TabsContent value="section-layouts">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Section Layout Types</CardTitle>
+              <CardDescription>
+                Different layout types available for sections
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Hero Banner</h3>
+                  <p className="text-muted-foreground">Large eye-catching banner, typically at the top of the page</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Call to Action (CTA)</h3>
+                  <p className="text-muted-foreground">Section designed to prompt user action</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Intro / Mission Statement</h3>
+                  <p className="text-muted-foreground">Introduces company, product, or service</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Feature Grid</h3>
+                  <p className="text-muted-foreground">Grid layout displaying features or services</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Alternating Feature Sections</h3>
+                  <p className="text-muted-foreground">Content and image alternating sides</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Benefits List</h3>
+                  <p className="text-muted-foreground">List of benefits or advantages</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Testimonial Section</h3>
+                  <p className="text-muted-foreground">Customer testimonials and reviews</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Client Logos</h3>
+                  <p className="text-muted-foreground">Showcase trusted clients and partners</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Case Studies</h3>
+                  <p className="text-muted-foreground">Success stories and case studies</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Media Mentions</h3>
+                  <p className="text-muted-foreground">Press and media coverage</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Product Showcase</h3>
+                  <p className="text-muted-foreground">Display products or services</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Pricing Table</h3>
+                  <p className="text-muted-foreground">Compare pricing options</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Stats / Metrics</h3>
+                  <p className="text-muted-foreground">Key statistics and numbers</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Milestones / Progress</h3>
+                  <p className="text-muted-foreground">Timeline or progress indicators</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Blog Previews</h3>
+                  <p className="text-muted-foreground">Preview of blog posts or articles</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">FAQ Section</h3>
+                  <p className="text-muted-foreground">Frequently asked questions</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Contact Form</h3>
+                  <p className="text-muted-foreground">Form for user inquiries</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Contact Info + Map</h3>
+                  <p className="text-muted-foreground">Contact information with map</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Newsletter Signup</h3>
+                  <p className="text-muted-foreground">Form for newsletter subscriptions</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Resume / Experience</h3>
+                  <p className="text-muted-foreground">Professional experience and education</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Team Members</h3>
+                  <p className="text-muted-foreground">Team profiles and information</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Image Gallery</h3>
+                  <p className="text-muted-foreground">Collection of images or portfolio</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Video Section</h3>
+                  <p className="text-muted-foreground">Embedded video content</p>
+                </div>
+                <div className="border p-4 rounded-md">
+                  <h3 className="font-bold">Portfolio Showcase</h3>
+                  <p className="text-muted-foreground">Portfolio of work or projects</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="layout-field-mapping">
+        <Card>
+          <CardHeader>
+            <CardTitle>Section Layout to Field Type Mapping</CardTitle>
+            <CardDescription>
+              Field types that correspond to different section layouts
+            </CardDescription>
+            <div className="mt-4">
+              <Input
+                type="search"
+                placeholder="Search by layout type or field type..."
+                value={layoutSearchTerm}
+                onChange={(e) => setLayoutSearchTerm(e.target.value)}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {filteredLayoutToFields.map(item => (
+                <div key={item.layout} className="border-b pb-4 last:border-0">
+                  <h3 className="font-bold text-lg mb-2">{item.layout}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {item.fields.map(field => (
+                      <div key={`${item.layout}-${field}`} className="bg-muted px-3 py-1 rounded-full text-sm">
+                        {field}
+                      </div>
+                    ))}
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-            
-            {filteredMappings.length === 0 && (
-              <p className="text-center text-muted-foreground py-4">
-                No layouts or fields found matching your search
-              </p>
-            )}
-          </Accordion>
-        </TabsContent>
-      </Tabs>
-    </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="field-input-mapping">
+        <Card>
+          <CardHeader>
+            <CardTitle>Field Type to Input Type Mapping</CardTitle>
+            <CardDescription>
+              How field types map to different input types in forms
+            </CardDescription>
+            <div className="mt-4">
+              <Input
+                type="search"
+                placeholder="Search by field type or input type..."
+                value={fieldTypeSearchTerm}
+                onChange={(e) => setFieldTypeSearchTerm(e.target.value)}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border-collapse">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="text-left p-2 border">Field Type</th>
+                    <th className="text-left p-2 border">Input Type</th>
+                    <th className="text-left p-2 border">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFieldTypeToInputType.map((item, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="p-2 border">{item.fieldType}</td>
+                      <td className="p-2 border">{getInputTypeDisplay(item.inputType)}</td>
+                      <td className="p-2 border">
+                        {item.inputType === 'text' && 'Single line text input for short content'}
+                        {item.inputType === 'textarea' && 'Multi-line text area for longer content'}
+                        {item.inputType === 'rich_text' && 'Rich text editor with formatting options'}
+                        {item.inputType === 'image' && 'URL input for image sources'}
+                        {item.inputType === 'url' && 'URL input for web links'}
+                        {item.inputType === 'list' && 'Input for comma-separated values or array items'}
+                        {item.inputType === 'json' && 'Structured data in JSON format'}
+                        {item.inputType === 'date' && 'Date picker for selecting dates'}
+                        {item.inputType === 'email' && 'Email address input with validation'}
+                        {item.inputType === 'password' && 'Secure password input field'}
+                        {item.inputType === 'color' && 'Color picker for selecting colors'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 };
 

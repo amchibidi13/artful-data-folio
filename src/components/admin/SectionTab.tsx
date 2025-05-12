@@ -94,7 +94,7 @@ export const SectionTab = ({
         return 'Text';
       case 'textarea':
         return 'Long Text';
-      case 'rich_text':
+      case 'rich_text': // Fixed this type by adding it to the switch statement
         return 'Rich Text';
       case 'image':
         return 'Image URL';

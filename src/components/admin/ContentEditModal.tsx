@@ -174,7 +174,7 @@ export const ContentEditModal = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Input Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select input type" />

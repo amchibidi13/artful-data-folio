@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -148,6 +147,8 @@ export const getFieldInputType = (fieldName: string) => {
     return 'color';
   } else if (fieldName.includes('paragraph') || fieldName.includes('description') || fieldName.includes('content')) {
     return 'textarea';
+  } else if (fieldName.includes('rich_text') || fieldName.includes('richtext') || fieldName.includes('rich-text')) {
+    return 'rich_text';
   } else if (fieldName.includes('list')) {
     return 'list';
   } else if (fieldName.includes('style')) {
@@ -344,18 +345,20 @@ export const useSiteStructure = () => {
   });
 };
 
-// Search function
+// Add new search function
 export const useSearchContent = (query: string) => {
   return useQuery({
     queryKey: ['search', query],
     queryFn: async () => {
       if (!query.trim()) return [];
       
+      // Use direct content search since we had issues with the search_index table
       const { data, error } = await supabase
         .from('site_content')
         .select('*')
         .filter('include_in_global_search', 'eq', true)
-        .textSearch('content', query);
+        .ilike('content', `%${query}%`)
+        .limit(20);
       
       if (error) throw error;
       return data || [];

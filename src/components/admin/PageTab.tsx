@@ -92,11 +92,14 @@ export const PageTab = ({
                   <Skeleton className="h-4 w-full" />
                 </div>
               ) : (
-                pages?.map((page) => (
-                  <SelectItem key={page.id} value={page.page_name}>
-                    {page.page_name}
-                  </SelectItem>
-                ))
+                [
+                  <SelectItem key="site" value="site">Site</SelectItem>,
+                  ...pages?.map((page) => (
+                    <SelectItem key={page.id} value={page.page_name}>
+                      {page.page_name}
+                    </SelectItem>
+                  )) || []
+                ]
               )}
             </SelectContent>
           </Select>

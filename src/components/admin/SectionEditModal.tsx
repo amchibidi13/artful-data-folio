@@ -148,13 +148,13 @@ export const SectionEditModal = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-[200px]">
+                      <SelectItem value="site">Site</SelectItem>
                       <SelectItem value="home">Home</SelectItem>
                       <SelectItem value="about">About</SelectItem>
                       <SelectItem value="contact">Contact</SelectItem>
                       <SelectItem value="blog">Blog</SelectItem>
                       <SelectItem value="services">Services</SelectItem>
                       <SelectItem value="portfolio">Portfolio</SelectItem>
-                      <SelectItem value="site">Site</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
