@@ -71,6 +71,27 @@ export const PageTab = ({
       'testimonials': 'Testimonial',
       'clients': 'Client Logos',
       'cases': 'Case Studies',
+      'media': 'Media Mentions',
+      'products': 'Product Showcase',
+      'pricing': 'Pricing Table',
+      'stats': 'Stats / Metrics',
+      'milestones': 'Milestones',
+      'blog': 'Blog Previews',
+      'faq': 'FAQ Section',
+      'contact_form': 'Contact Form',
+      'contact_info': 'Contact Info',
+      'newsletter': 'Newsletter Signup',
+      'resume': 'Resume',
+      'login': 'Login / Signup',
+      'navigation': 'Navigation Bar',
+      'footer': 'Footer',
+      'utility': 'Utility',
+      'error': 'Error Page',
+      'gallery': 'Image Gallery',
+      'video': 'Video Section',
+      'portfolio': 'Portfolio Showcase',
+      'team': 'Team Members',
+      'timeline': 'Timeline',
       'default': 'Default',
     };
     
@@ -94,11 +115,15 @@ export const PageTab = ({
               ) : (
                 [
                   <SelectItem key="site" value="site">Site</SelectItem>,
-                  ...pages?.map((page) => (
+                  <SelectItem key="home" value="home">Home</SelectItem>,
+                  ...(pages?.filter(page => page.page_name !== 'admin' && 
+                                           page.page_name !== 'site' && 
+                                           page.page_name !== 'home')
+                          .map((page) => (
                     <SelectItem key={page.id} value={page.page_name}>
                       {page.page_name}
                     </SelectItem>
-                  )) || []
+                  )) || [])
                 ]
               )}
             </SelectContent>

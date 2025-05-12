@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ export const SectionEditModal = ({
 }) => {
   const form = useForm<any>({
     resolver: zodResolver(sectionSchema),
-    defaultValues: itemData || {
+    defaultValues: {
       section_name: '',
       display_order: 0,
       is_visible: true,
@@ -81,15 +80,18 @@ export const SectionEditModal = ({
 
   React.useEffect(() => {
     if (isOpen) {
-      form.reset(itemData || {
+      const defaultValues = {
         section_name: '',
         display_order: 0,
         is_visible: true,
         layout_type: 'hero',
         page: 'home',
         background_color: null,
-        background_image: null
-      });
+        background_image: null,
+        ...itemData
+      };
+      
+      form.reset(defaultValues);
     }
   }, [form, itemData, isOpen]);
 
@@ -135,6 +137,7 @@ export const SectionEditModal = ({
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="page"
@@ -164,6 +167,7 @@ export const SectionEditModal = ({
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="layout_type"
@@ -188,6 +192,7 @@ export const SectionEditModal = ({
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="background_color"

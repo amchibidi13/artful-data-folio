@@ -1,32 +1,30 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { getFieldInputType } from '@/hooks/useSiteData';
 import StyledTextEditor from './StyledTextEditor';
+import { getFieldInputType } from '@/hooks/useSiteData';
 
 const inputTypeOptions = [
-  { value: 'text', label: 'Short Text' },
+  { value: 'text', label: 'Text' },
   { value: 'textarea', label: 'Long Text' },
-  { value: 'rich_text', label: 'Rich Text' },
+  { value: 'rich_text', label: 'Rich Text Editor' },
   { value: 'image', label: 'Image URL' },
   { value: 'url', label: 'URL' },
-  { value: 'list', label: 'List of Strings' },
-  { value: 'json', label: 'JSON List' },
+  { value: 'list', label: 'List' },
+  { value: 'json', label: 'JSON' },
   { value: 'date', label: 'Date' },
   { value: 'email', label: 'Email' },
-  { value: 'phone', label: 'Phone Number' },
-  { value: 'select', label: 'Select' },
-  { value: 'color', label: 'Color' }
+  { value: 'password', label: 'Password' },
+  { value: 'color', label: 'Color' },
 ];
 
 const contentSchema = z.object({
@@ -34,11 +32,10 @@ const contentSchema = z.object({
   section: z.string().min(1, "Section is required"),
   content_type: z.string().min(1, "Content type is required"),
   field_type: z.string().nullable().optional(),
-  content: z.string().min(1, "Content is required"),
   display_order: z.coerce.number().default(0),
   is_visible: z.boolean().default(true),
   include_in_global_search: z.boolean().default(false),
-  input_type: z.string().optional()
+  content: z.string().min(1, "Content is required"),
 });
 
 export const ContentEditModal = ({
@@ -52,67 +49,67 @@ export const ContentEditModal = ({
   itemData: any | null;
   onSubmit: (data: any) => void;
 }) => {
-  const [contentStyles, setContentStyles] = React.useState<Record<string, any>>({});
+  const [inputType, setInputType] = useState('text');
   
   const form = useForm<any>({
     resolver: zodResolver(contentSchema),
-    defaultValues: itemData || {
+    defaultValues: {
       section: '',
       content_type: '',
       field_type: '',
-      content: '',
       display_order: 0,
       is_visible: true,
       include_in_global_search: false,
-      input_type: 'text'
+      content: '',
     },
   });
 
-  React.useEffect(() => {
+  const watchFieldType = form.watch('field_type');
+  
+  // Update inputType whenever field_type changes
+  useEffect(() => {
+    if (watchFieldType) {
+      const detectedInputType = getFieldInputType(watchFieldType);
+      setInputType(detectedInputType);
+    }
+  }, [watchFieldType]);
+
+  useEffect(() => {
     if (isOpen) {
-      let defaultData = itemData || {
+      const defaultValues = {
         section: '',
         content_type: '',
         field_type: '',
-        content: '',
         display_order: 0,
         is_visible: true,
         include_in_global_search: false,
-        input_type: 'text'
+        content: '',
+        ...itemData
       };
       
-      // If field_type is empty but content_type exists, use content_type as field_type
-      if (!defaultData.field_type && defaultData.content_type) {
-        defaultData.field_type = defaultData.content_type;
-      }
+      form.reset(defaultValues);
       
-      // Set input_type based on field_type if it's not already set
-      if (!defaultData.input_type && defaultData.field_type) {
-        defaultData.input_type = getFieldInputType(defaultData.field_type);
+      // Set input type based on field_type or content_type
+      const typeToCheck = defaultValues.field_type || defaultValues.content_type;
+      if (typeToCheck) {
+        const detectedInputType = getFieldInputType(typeToCheck);
+        setInputType(detectedInputType);
       }
-      
-      form.reset(defaultData);
     }
   }, [form, itemData, isOpen]);
 
-  // Watch content_type and update field_type if it's empty
-  const watchContentType = form.watch('content_type');
-  React.useEffect(() => {
-    if (watchContentType && !form.getValues('field_type')) {
-      form.setValue('field_type', watchContentType);
-      form.setValue('input_type', getFieldInputType(watchContentType));
-    }
-  }, [watchContentType, form]);
-
   const handleSubmit = (data: any) => {
-    // Remove input_type as it's not stored in the database
-    const { input_type, ...submitData } = data;
-    onSubmit(submitData);
+    // If field_type is not set but content_type is, use content_type as field_type
+    if (!data.field_type && data.content_type) {
+      data.field_type = data.content_type;
+    }
+    
+    onSubmit(data);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{itemData?.id ? 'Edit Content Field' : 'Add Content Field'}</DialogTitle>
         </DialogHeader>
@@ -120,61 +117,54 @@ export const ContentEditModal = ({
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="section"
+              name="content_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Section</FormLabel>
+                  <FormLabel>Content Type</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} placeholder="e.g. title, description, image_url" />
                   </FormControl>
+                  <FormDescription>
+                    Identifier for this content field
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="content_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Content Type</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Type of content (e.g., title, subtitle)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="field_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Field Type</FormLabel>
-                    <FormControl>
-                      <Input {...field} value={field.value || ''} />
-                    </FormControl>
-                    <FormDescription>
-                      Type of field (e.g., short_text, long_text)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
+            <FormField
+              control={form.control}
+              name="field_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Field Type</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      value={field.value || ''} 
+                      placeholder="e.g. title, description, image_url"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Type of field (leave blank to use Content Type)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <FormField
               control={form.control}
               name="input_type"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Input Type</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select 
+                    value={inputType} 
+                    onValueChange={(value) => {
+                      setInputType(value);
+                    }}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select input type" />
@@ -189,56 +179,8 @@ export const ContentEditModal = ({
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Type of input field to use in the form
+                    Type of input field to use for this content
                   </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Content</FormLabel>
-                  <Tabs defaultValue="content">
-                    <TabsList className="mb-2">
-                      <TabsTrigger value="content">Content</TabsTrigger>
-                      <TabsTrigger value="styling">Styling</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="content">
-                      <FormControl>
-                        {form.getValues('input_type') === 'textarea' || form.getValues('input_type') === 'rich_text' ? (
-                          <Textarea 
-                            rows={5} 
-                            {...field}
-                          />
-                        ) : form.getValues('input_type') === 'json' ? (
-                          <Textarea 
-                            rows={10} 
-                            {...field}
-                          />
-                        ) : (
-                          <Input {...field} />
-                        )}
-                      </FormControl>
-                    </TabsContent>
-                    <TabsContent value="styling">
-                      <div className="space-y-4">
-                        <div>
-                          <FormLabel>Text Styling</FormLabel>
-                          <StyledTextEditor 
-                            value={field.value}
-                            onChange={field.onChange}
-                            currentStyle={contentStyles}
-                            onStyleChange={setContentStyles}
-                            rows={5}
-                          />
-                        </div>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
                   <FormMessage />
                 </FormItem>
               )}
@@ -262,45 +204,72 @@ export const ContentEditModal = ({
               )}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="is_visible"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange} 
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Content</FormLabel>
+                  <FormControl>
+                    {inputType === 'textarea' ? (
+                      <Textarea {...field} className="min-h-[120px]" />
+                    ) : inputType === 'rich_text' ? (
+                      <StyledTextEditor
+                        value={field.value}
+                        onChange={field.onChange}
                       />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Visible</FormLabel>
-                      <FormDescription>Show this content on the website</FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="include_in_global_search"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange} 
+                    ) : inputType === 'color' ? (
+                      <Input
+                        type="color"
+                        {...field}
+                        className="h-10 w-full"
                       />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Include in Global Search</FormLabel>
-                      <FormDescription>Make this content searchable</FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
+                    ) : (
+                      <Input {...field} />
+                    )}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_visible"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange} 
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Visible</FormLabel>
+                    <FormDescription>Show this content on the website</FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="include_in_global_search"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange} 
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Include in Global Search</FormLabel>
+                    <FormDescription>Make this content searchable in the site-wide search</FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
             
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
