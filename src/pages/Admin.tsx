@@ -22,6 +22,9 @@ import NavigationMenuTab from '@/components/admin/NavigationMenuTab';
 import PageEditModal from '@/components/admin/PageEditModal';
 import SectionEditModal from '@/components/admin/SectionEditModal';
 import ContentEditModal from '@/components/admin/ContentEditModal';
+import HeaderTab from '@/components/admin/HeaderTab';
+import FooterTab from '@/components/admin/FooterTab';
+import ThemesTab from '@/components/admin/ThemesTab';
 
 // Table name type to ensure we only use valid table names
 type TableName = 'site_config' | 'site_content' | 'navigation' | 'projects' | 'articles' | 'pages';
@@ -453,7 +456,7 @@ const Admin: React.FC = () => {
             <TabsTrigger value="help">Help</TabsTrigger>
           </TabsList>
           
-          {/* Site Tab - Manage Pages with nested Navigation tab */}
+          {/* Site Tab - Manage Pages with nested tabs */}
           <TabsContent value="site" className="space-y-6">
             <Card>
               <CardHeader>
@@ -465,6 +468,9 @@ const Admin: React.FC = () => {
                   <TabsList className="mt-2">
                     <TabsTrigger value="pages">Pages</TabsTrigger>
                     <TabsTrigger value="navigation">Navigation</TabsTrigger>
+                    <TabsTrigger value="header">Header</TabsTrigger>
+                    <TabsTrigger value="footer">Footer</TabsTrigger>
+                    <TabsTrigger value="themes">Themes</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </CardHeader>
@@ -475,8 +481,14 @@ const Admin: React.FC = () => {
                     onDelete={handleDeleteConfirm}
                     onReorder={handleReorder}
                   />
-                ) : (
+                ) : activePagesSubTab === 'navigation' ? (
                   <NavigationMenuTab />
+                ) : activePagesSubTab === 'header' ? (
+                  <HeaderTab />
+                ) : activePagesSubTab === 'footer' ? (
+                  <FooterTab />
+                ) : (
+                  <ThemesTab />
                 )}
               </CardContent>
             </Card>

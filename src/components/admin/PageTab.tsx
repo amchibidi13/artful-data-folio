@@ -54,7 +54,11 @@ export const PageTab = ({
     if ((!selectedPage || selectedPage === '') && pages && pages.length > 0) {
       // Find the home page or use the first page
       const homePage = pages.find(p => p.page_name.toLowerCase() === 'home');
-      setSelectedPage(homePage ? homePage.page_name : pages[0].page_name);
+      if (homePage) {
+        setSelectedPage(homePage.page_name);
+      } else {
+        setSelectedPage(pages[0].page_name);
+      }
     }
   }, [pages, selectedPage, setSelectedPage]);
 
@@ -72,46 +76,6 @@ export const PageTab = ({
 
   const handleReorder = (section: any, direction: 'up' | 'down') => {
     onReorder('section', section.id, section.display_order, direction);
-  };
-
-  const getLayoutTypeName = (layoutType: string) => {
-    const layoutMap: {[key: string]: string} = {
-      'hero': 'Hero Banner',
-      'cta': 'Call to Action',
-      'intro': 'Introduction',
-      'features': 'Feature Grid',
-      'alternating': 'Alternating Features',
-      'benefits': 'Benefits List',
-      'comparison': 'Comparison Table',
-      'testimonials': 'Testimonial',
-      'clients': 'Client Logos',
-      'cases': 'Case Studies',
-      'media': 'Media Mentions',
-      'products': 'Product Showcase',
-      'pricing': 'Pricing Table',
-      'stats': 'Stats / Metrics',
-      'milestones': 'Milestones',
-      'blog': 'Blog Previews',
-      'faq': 'FAQ Section',
-      'contact_form': 'Contact Form',
-      'contact_info': 'Contact Info',
-      'newsletter': 'Newsletter Signup',
-      'resume': 'Resume',
-      'login': 'Login / Signup',
-      'navigation': 'Navigation Bar',
-      'header': 'Header Section',
-      'footer': 'Footer Section',
-      'utility': 'Utility',
-      'error': 'Error Page',
-      'gallery': 'Image Gallery',
-      'video': 'Video Section',
-      'portfolio': 'Portfolio Showcase',
-      'team': 'Team Members',
-      'timeline': 'Timeline',
-      'default': 'Default',
-    };
-    
-    return layoutMap[layoutType] || layoutType;
   };
 
   // Process page list to ensure all pages including home are included
@@ -239,5 +203,45 @@ export const PageTab = ({
     </div>
   );
 };
+
+function getLayoutTypeName(layoutType: string) {
+  const layoutMap: {[key: string]: string} = {
+    'hero': 'Hero Banner',
+    'cta': 'Call to Action',
+    'intro': 'Introduction',
+    'features': 'Feature Grid',
+    'alternating': 'Alternating Features',
+    'benefits': 'Benefits List',
+    'comparison': 'Comparison Table',
+    'testimonials': 'Testimonial',
+    'clients': 'Client Logos',
+    'cases': 'Case Studies',
+    'media': 'Media Mentions',
+    'products': 'Product Showcase',
+    'pricing': 'Pricing Table',
+    'stats': 'Stats / Metrics',
+    'milestones': 'Milestones',
+    'blog': 'Blog Previews',
+    'faq': 'FAQ Section',
+    'contact_form': 'Contact Form',
+    'contact_info': 'Contact Info',
+    'newsletter': 'Newsletter Signup',
+    'resume': 'Resume',
+    'login': 'Login / Signup',
+    'navigation': 'Navigation Bar',
+    'header': 'Header Section',
+    'footer': 'Footer Section',
+    'utility': 'Utility',
+    'error': 'Error Page',
+    'gallery': 'Image Gallery',
+    'video': 'Video Section',
+    'portfolio': 'Portfolio Showcase',
+    'team': 'Team Members',
+    'timeline': 'Timeline',
+    'default': 'Default',
+  };
+  
+  return layoutMap[layoutType] || layoutType;
+}
 
 export default PageTab;

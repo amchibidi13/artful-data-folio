@@ -8,6 +8,14 @@ import { SearchBar } from '@/components/SearchBar';
 import { Menu, ChevronDown } from 'lucide-react';
 import { useSiteContent } from '@/hooks/useSiteData';
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
@@ -16,12 +24,6 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface HeaderProps {
   onPageChange: (pageName: string) => void;
@@ -43,6 +45,24 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
     return 'MyWebsite';
   }, [siteContent]);
 
+  // Get search placeholder text
+  const searchPlaceholder = React.useMemo(() => {
+    if (siteContent) {
+      const searchContent = siteContent.find(content => content.content_type === 'search_placeholder');
+      return searchContent ? searchContent.content : 'Search...';
+    }
+    return 'Search...';
+  }, [siteContent]);
+
+  // Get admin button text
+  const adminButtonText = React.useMemo(() => {
+    if (siteContent) {
+      const adminContent = siteContent.find(content => content.content_type === 'admin_button_text');
+      return adminContent ? adminContent.content : 'Admin';
+    }
+    return 'Admin';
+  }, [siteContent]);
+
   // Process sections for navigation (if they are set to include_in_navigation)
   const sectionItems = React.useMemo(() => {
     if (!navigationItems) return [];
@@ -51,10 +71,52 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
       .sort((a, b) => a.display_order - b.display_order);
   }, [navigationItems]);
 
+  // Process pages for navigation menu
+  const pageItems = React.useMemo(() => {
+    if (!pages) return [];
+    return pages
+      .filter(page => page.is_visible && page.include_in_navigation && page.page_name !== 'admin')
+      .sort((a, b) => a.display_order - b.display_order);
+  }, [pages]);
+
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center space-x-8">
+        <div className="flex items-center space-x-4">
+          {/* Hamburger menu for pages */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>{siteTitle}</SheetTitle>
+                <SheetDescription>Navigation</SheetDescription>
+              </SheetHeader>
+              <div className="py-4">
+                <nav className="flex flex-col space-y-2">
+                  {pageItems.map((page, index) => (
+                    <Link 
+                      key={page.id} 
+                      to={`/${page.page_link || page.page_name.toLowerCase()}`}
+                      className={`py-2 px-3 rounded-md transition-colors ${
+                        currentPage === (page.page_link || page.page_name.toLowerCase())
+                          ? 'bg-accent/50 text-accent-foreground font-medium'
+                          : 'hover:bg-accent/20 text-foreground'
+                      }`}
+                      onClick={() => onPageChange(page.page_name.toLowerCase())}
+                    >
+                      {page.page_name}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Website Title */}
           <Link to="/" className="text-xl font-bold" onClick={() => onPageChange('home')}>
             {siteTitle}
           </Link>
@@ -88,10 +150,10 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
         
         <div className="flex items-center space-x-2">
           <div className="hidden md:block w-64">
-            <SearchBar />
+            <SearchBar placeholder={searchPlaceholder} />
           </div>
           
-          {/* Mobile menu button */}
+          {/* Mobile section menu button */}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -103,7 +165,7 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
           
           {/* Admin Button */}
           <Button variant="outline" size="sm" asChild>
-            <Link to="/admin">Admin</Link>
+            <Link to="/admin">{adminButtonText}</Link>
           </Button>
         </div>
       </div>
@@ -135,7 +197,7 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
       )}
       
       <div className="md:hidden container mx-auto px-4 py-2 border-t">
-        <SearchBar />
+        <SearchBar placeholder={searchPlaceholder} />
       </div>
     </header>
   );

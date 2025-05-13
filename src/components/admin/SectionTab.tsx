@@ -70,7 +70,11 @@ export const SectionTab = ({
     if ((!selectedPage || selectedPage === '') && pages && pages.length > 0) {
       // Find the home page or use the first page
       const homePage = pages.find(p => p.page_name.toLowerCase() === 'home');
-      setSelectedPage(homePage ? homePage.page_name : pages[0].page_name);
+      if (homePage) {
+        setSelectedPage(homePage.page_name);
+      } else {
+        setSelectedPage(pages[0].page_name);
+      }
     }
   }, [pages, selectedPage, setSelectedPage]);
 
