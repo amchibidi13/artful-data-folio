@@ -65,6 +65,10 @@ const Admin: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{itemType: ItemType, id: string} | null>(null);
 
+  // Tabs state
+  const [activeTab, setActiveTab] = useState('site');
+  const [activePagesSubTab, setActivePagesSubTab] = useState('pages');
+
   // Mutations for deleting items
   const deleteMutation = useMutation({
     mutationFn: async ({ itemType, id }: { itemType: ItemType, id: string }) => {
@@ -243,6 +247,47 @@ const Admin: React.FC = () => {
       });
     }
   });
+
+  // Mutations for reordering items (sections and content)
+  const reorderMutation = useMutation({
+    mutationFn: async ({ itemType, id, newOrder }: { itemType: ItemType, id: string, newOrder: number }) => {
+      const tableName = getTableName(itemType);
+      
+      const { error } = await supabase
+        .from(tableName)
+        .update({ display_order: newOrder })
+        .eq('id', id);
+      
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate queries based on the item type
+      switch (variables.itemType) {
+        case 'section':
+          queryClient.invalidateQueries({ queryKey: ['admin-site-config'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-sections'] });
+          queryClient.invalidateQueries({ queryKey: ['site-config'] });
+          break;
+        case 'content':
+          queryClient.invalidateQueries({ queryKey: ['admin-site-content'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-content'] });
+          queryClient.invalidateQueries({ queryKey: ['site-content'] });
+          break;
+      }
+      
+      toast({
+        title: "Order Updated",
+        description: "Successfully updated display order",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update order: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
   
   // Login form handler
   const handleLogin = (e: React.FormEvent) => {
@@ -331,6 +376,15 @@ const Admin: React.FC = () => {
     }
   };
 
+  // Handle reordering items
+  const handleReorder = (itemType: ItemType, id: string, currentOrder: number, direction: 'up' | 'down') => {
+    const newOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
+    
+    if (newOrder >= 0) {
+      reorderMutation.mutate({ itemType, id, newOrder });
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="container py-20 flex justify-center items-center min-h-screen bg-gray-50">
@@ -370,7 +424,7 @@ const Admin: React.FC = () => {
     );
   }
 
-  // Return admin dashboard UI
+  // Return admin dashboard UI with nested tabs
   return (
     <AdminProvider>
       <div className="container py-8 bg-gray-50 min-h-screen">
@@ -390,45 +444,40 @@ const Admin: React.FC = () => {
           </Button>
         </div>
         
-        <Tabs defaultValue="site" className="w-full">
-          <TabsList className="grid grid-cols-6 mb-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-5 mb-8">
             <TabsTrigger value="site">Pages</TabsTrigger>
-            <TabsTrigger value="navigation">Navigation</TabsTrigger>
             <TabsTrigger value="page">Sections</TabsTrigger>
             <TabsTrigger value="section">Content</TabsTrigger>
             <TabsTrigger value="sitemap">SiteMap</TabsTrigger>
             <TabsTrigger value="help">Help</TabsTrigger>
           </TabsList>
           
-          {/* Site Tab - Manage Pages */}
+          {/* Site Tab - Manage Pages with nested Navigation tab */}
           <TabsContent value="site" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Website Pages</CardTitle>
                 <CardDescription>
-                  Manage website pages
+                  Manage website pages and navigation
                 </CardDescription>
+                <Tabs value={activePagesSubTab} onValueChange={setActivePagesSubTab}>
+                  <TabsList className="mt-2">
+                    <TabsTrigger value="pages">Pages</TabsTrigger>
+                    <TabsTrigger value="navigation">Navigation</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </CardHeader>
               <CardContent>
-                <SiteTab 
-                  onEdit={handleEdit}
-                  onDelete={handleDeleteConfirm}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* Navigation Tab - Manage Navigation Menu */}
-          <TabsContent value="navigation" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Navigation Menu</CardTitle>
-                <CardDescription>
-                  Manage the navigation menu structure
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NavigationMenuTab />
+                {activePagesSubTab === 'pages' ? (
+                  <SiteTab 
+                    onEdit={handleEdit}
+                    onDelete={handleDeleteConfirm}
+                    onReorder={handleReorder}
+                  />
+                ) : (
+                  <NavigationMenuTab />
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -446,6 +495,7 @@ const Admin: React.FC = () => {
                 <PageTab 
                   onEdit={handleEdit}
                   onDelete={handleDeleteConfirm}
+                  onReorder={handleReorder}
                 />
               </CardContent>
             </Card>
@@ -464,6 +514,7 @@ const Admin: React.FC = () => {
                 <SectionTab 
                   onEdit={handleEdit}
                   onDelete={handleDeleteConfirm}
+                  onReorder={handleReorder}
                 />
               </CardContent>
             </Card>

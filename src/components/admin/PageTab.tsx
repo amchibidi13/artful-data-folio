@@ -6,16 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Trash, Plus } from 'lucide-react';
+import { Pencil, Trash, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 import { SiteConfig } from '@/types/database-types';
 
 export const PageTab = ({
   onEdit,
-  onDelete
+  onDelete,
+  onReorder
 }: {
   onEdit: (type: 'section', item: any) => void,
-  onDelete: (type: 'section', item: any) => void
+  onDelete: (type: 'section', item: any) => void,
+  onReorder: (type: 'section', id: string, currentOrder: number, direction: 'up' | 'down') => void
 }) => {
   const { selectedPage, setSelectedPage } = useAdmin();
   
@@ -49,7 +51,7 @@ export const PageTab = ({
 
   // Initialize selectedPage to 'home' if it's empty
   useEffect(() => {
-    if (!selectedPage && pages && pages.length > 0) {
+    if ((!selectedPage || selectedPage === '') && pages && pages.length > 0) {
       // Find the home page or use the first page
       const homePage = pages.find(p => p.page_name.toLowerCase() === 'home');
       setSelectedPage(homePage ? homePage.page_name : pages[0].page_name);
@@ -66,6 +68,10 @@ export const PageTab = ({
 
   const handleDelete = (section: any) => {
     onDelete('section', section);
+  };
+
+  const handleReorder = (section: any, direction: 'up' | 'down') => {
+    onReorder('section', section.id, section.display_order, direction);
   };
 
   const getLayoutTypeName = (layoutType: string) => {
@@ -119,7 +125,12 @@ export const PageTab = ({
       <div className="flex justify-between items-center">
         <div className="flex-1">
           <label className="text-sm font-medium mb-2 block">Select Page</label>
-          <Select value={selectedPage || ""} onValueChange={setSelectedPage}>
+          <Select 
+            value={selectedPage || ""} 
+            onValueChange={(value) => {
+              if (value) setSelectedPage(value);
+            }}
+          >
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Select page" />
             </SelectTrigger>
@@ -184,17 +195,31 @@ export const PageTab = ({
                   )}
                   {section.background_image && 'Has image'}
                 </TableCell>
-                <TableCell className="space-x-2">
+                <TableCell className="space-x-1">
                   <Button 
                     variant="ghost" 
-                    size="sm"
+                    size="icon"
+                    onClick={() => handleReorder(section, 'up')}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleReorder(section, 'down')}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
                     onClick={() => handleEdit(section)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
-                    size="sm"
+                    size="icon"
                     onClick={() => handleDelete(section)}
                   >
                     <Trash className="h-4 w-4" />

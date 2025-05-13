@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useNavigationItems } from '@/hooks/useSiteData';
@@ -43,18 +43,13 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
     return 'MyWebsite';
   }, [siteContent]);
 
-  // Process pages to extract menu items (if they are set to include_in_navigation)
-  const menuItems = React.useMemo(() => {
-    if (!pages) return [];
-    return pages
-      .filter(page => page.is_visible && page.include_in_navigation && page.page_name !== 'admin')
-      .sort((a, b) => a.display_order - b.display_order)
-      .map(page => ({
-        label: page.page_name,
-        pageName: page.page_name,
-        type: 'link'
-      }));
-  }, [pages]);
+  // Process sections for navigation (if they are set to include_in_navigation)
+  const sectionItems = React.useMemo(() => {
+    if (!navigationItems) return [];
+    return navigationItems
+      .filter(item => item.is_visible)
+      .sort((a, b) => a.display_order - b.display_order);
+  }, [navigationItems]);
 
   return (
     <header className="bg-white border-b sticky top-0 z-50">
@@ -64,22 +59,26 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
             {siteTitle}
           </Link>
           
-          {/* Desktop Navigation Menu */}
+          {/* Desktop Navigation Menu - Only Section Links */}
           <div className="hidden md:flex items-center">
             <NavigationMenu>
               <NavigationMenuList>
-                {menuItems.map((item, index) => (
+                {sectionItems.map((item, index) => (
                   <NavigationMenuItem key={index}>
-                    <Link 
-                      to="/" 
-                      className={`${navigationMenuTriggerStyle()} ${currentPage === item.pageName.toLowerCase() ? 'bg-accent/50' : ''}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onPageChange(item.pageName.toLowerCase());
+                    <Button 
+                      variant="link"
+                      className={`${currentPage === item.target_section.toLowerCase() ? 'text-primary font-semibold' : 'text-foreground'}`}
+                      onClick={() => {
+                        if (item.target_section) {
+                          const element = document.getElementById(item.target_section);
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        }
                       }}
                     >
                       {item.label}
-                    </Link>
+                    </Button>
                   </NavigationMenuItem>
                 ))}
               </NavigationMenuList>
@@ -92,32 +91,6 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
             <SearchBar />
           </div>
           
-          {/* Pages Dropdown Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                Pages <ChevronDown className="ml-1 h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white">
-              {pages && pages
-                .filter(page => page.is_visible && page.page_name !== 'admin')
-                .map((page) => (
-                  <DropdownMenuItem 
-                    key={page.id}
-                    className="cursor-pointer"
-                    onClick={() => onPageChange(page.page_name.toLowerCase())}
-                  >
-                    {page.page_name}
-                  </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/admin">Admin</Link>
-          </Button>
-          
           {/* Mobile menu button */}
           <Button 
             variant="ghost" 
@@ -127,26 +100,35 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
           >
             <Menu className="h-5 w-5" />
           </Button>
+          
+          {/* Admin Button */}
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin">Admin</Link>
+          </Button>
         </div>
       </div>
       
-      {/* Mobile menu */}
+      {/* Mobile section navigation menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-t py-4 px-4">
           <nav className="flex flex-col space-y-2">
-            {menuItems.map((item, index) => (
-              <Link 
-                key={index} 
-                to="/"
-                className={`px-4 py-2 text-sm hover:bg-gray-100 rounded-md ${currentPage === item.pageName.toLowerCase() ? 'bg-accent/50' : ''}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onPageChange(item.pageName.toLowerCase());
+            {sectionItems.map((item, index) => (
+              <Button 
+                key={index}
+                variant="ghost"
+                className={`justify-start ${currentPage === item.target_section.toLowerCase() ? 'bg-accent/50' : ''}`}
+                onClick={() => {
+                  if (item.target_section) {
+                    const element = document.getElementById(item.target_section);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }
                   setMobileMenuOpen(false);
                 }}
               >
                 {item.label}
-              </Link>
+              </Button>
             ))}
           </nav>
         </div>

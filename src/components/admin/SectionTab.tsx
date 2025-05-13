@@ -6,17 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Trash, Plus } from 'lucide-react';
+import { Pencil, Trash, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 import { SiteContent } from '@/types/database-types';
 import { getFieldInputType } from '@/hooks/useSiteData';
 
 export const SectionTab = ({
   onEdit,
-  onDelete
+  onDelete,
+  onReorder
 }: {
   onEdit: (type: 'content', item: any) => void,
-  onDelete: (type: 'content', item: any) => void
+  onDelete: (type: 'content', item: any) => void,
+  onReorder: (type: 'content', id: string, currentOrder: number, direction: 'up' | 'down') => void
 }) => {
   const { selectedPage, setSelectedPage, selectedSection, setSelectedSection } = useAdmin();
   
@@ -65,7 +67,7 @@ export const SectionTab = ({
 
   // Initialize selectedPage to 'home' if it's empty
   useEffect(() => {
-    if (!selectedPage && pages && pages.length > 0) {
+    if ((!selectedPage || selectedPage === '') && pages && pages.length > 0) {
       // Find the home page or use the first page
       const homePage = pages.find(p => p.page_name.toLowerCase() === 'home');
       setSelectedPage(homePage ? homePage.page_name : pages[0].page_name);
@@ -95,6 +97,10 @@ export const SectionTab = ({
 
   const handleDelete = (content: SiteContent) => {
     onDelete('content', content);
+  };
+
+  const handleReorder = (content: SiteContent, direction: 'up' | 'down') => {
+    onReorder('content', content.id, content.display_order, direction);
   };
 
   const getInputTypeLabel = (fieldType: string) => {
@@ -133,14 +139,22 @@ export const SectionTab = ({
     return pages.filter(page => page.page_name !== 'admin');
   }, [pages]);
 
+  const handleSelectPage = (value: string) => {
+    if (value) {
+      setSelectedPage(value);
+      // Reset section selection when page changes
+      setSelectedSection('');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium mb-2 block">Select Page</label>
           <Select 
-            value={selectedPage} 
-            onValueChange={setSelectedPage}
+            value={selectedPage || ""} 
+            onValueChange={handleSelectPage}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select page" />
@@ -231,32 +245,46 @@ export const SectionTab = ({
             contentItems
               .filter(content => !content.content_type.endsWith('_style'))
               .map((content) => (
-              <TableRow key={content.id}>
-                <TableCell>{content.display_order}</TableCell>
-                <TableCell>{content.field_type || content.content_type}</TableCell>
-                <TableCell>
-                  {getInputTypeLabel(content.field_type || content.content_type)}
-                </TableCell>
-                <TableCell>{content.is_visible ? 'Visible' : 'Hidden'}</TableCell>
-                <TableCell>{content.include_in_global_search ? 'Yes' : 'No'}</TableCell>
-                <TableCell className="space-x-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleEdit(content)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleDelete(content)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))
+                <TableRow key={content.id}>
+                  <TableCell>{content.display_order}</TableCell>
+                  <TableCell>{content.field_type || content.content_type}</TableCell>
+                  <TableCell>
+                    {getInputTypeLabel(content.field_type || content.content_type)}
+                  </TableCell>
+                  <TableCell>{content.is_visible ? 'Visible' : 'Hidden'}</TableCell>
+                  <TableCell>{content.include_in_global_search ? 'Yes' : 'No'}</TableCell>
+                  <TableCell className="space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleReorder(content, 'up')}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleReorder(content, 'down')}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleEdit(content)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDelete(content)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
           ) : (
             <TableRow>
               <TableCell colSpan={6} className="text-center">

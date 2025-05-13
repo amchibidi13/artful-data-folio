@@ -6,15 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { Pencil, Trash, Plus } from 'lucide-react';
+import { Pencil, Trash, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 
 export const SiteTab = ({ 
   onEdit,
-  onDelete
+  onDelete,
+  onReorder
 }: { 
   onEdit: (type: 'page', item: any) => void,
-  onDelete: (type: 'page', item: any) => void
+  onDelete: (type: 'page', item: any) => void,
+  onReorder: (type: 'page', id: string, currentOrder: number, direction: 'up' | 'down') => void
 }) => {
   const queryClient = useQueryClient();
   const { setSelectedPage, setPageLinks } = useAdmin();
@@ -68,6 +70,10 @@ export const SiteTab = ({
     setSelectedPage(pageName);
   };
 
+  const handleReorder = (page: any, direction: 'up' | 'down') => {
+    onReorder('page', page.id, page.display_order, direction);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -109,7 +115,27 @@ export const SiteTab = ({
                 <TableCell className="space-x-2">
                   <Button 
                     variant="ghost" 
-                    size="sm"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReorder(page, 'up');
+                    }}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleReorder(page, 'down');
+                    }}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEdit(page);
@@ -119,7 +145,7 @@ export const SiteTab = ({
                   </Button>
                   <Button 
                     variant="ghost" 
-                    size="sm"
+                    size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(page);
