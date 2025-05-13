@@ -80,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
   }, [pages]);
 
   return (
-    <header className="bg-white border-b sticky top-0 z-50">
+    <header className="bg-gray-900 text-white sticky top-0 z-50 shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center space-x-4">
           {/* Hamburger menu for pages */}
@@ -128,8 +128,10 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
                 {sectionItems.map((item, index) => (
                   <NavigationMenuItem key={index}>
                     <Button 
-                      variant="link"
-                      className={`${currentPage === item.target_section.toLowerCase() ? 'text-primary font-semibold' : 'text-foreground'}`}
+                      variant="ghost"
+                      className={`text-gray-400 hover:text-white bg-transparent hover:bg-transparent ${
+                        currentPage === item.target_section.toLowerCase() ? 'font-semibold' : ''
+                      }`}
                       onClick={() => {
                         if (item.target_section) {
                           const element = document.getElementById(item.target_section);
@@ -164,7 +166,12 @@ const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
           </Button>
           
           {/* Admin Button */}
-          <Button variant="outline" size="sm" asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            asChild 
+            className="text-gray-400 hover:text-white bg-transparent hover:bg-transparent"
+          >
             <Link to="/admin">{adminButtonText}</Link>
           </Button>
         </div>

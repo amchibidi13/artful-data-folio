@@ -27,7 +27,8 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
   const [currentPageName, setCurrentPageName] = useState<string>(initialPage || 'home');
   const { data: allSiteConfig, isLoading } = useSiteConfig();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Remove the sidebar state
+  // const [sidebarOpen, setSidebarOpen] = useState(false);
   const { data: navigationMenu } = useNavigationMenu();
 
   useEffect(() => {
@@ -73,7 +74,8 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
   // Handle page change from navigation
   const handlePageChange = (pageName: string) => {
     setCurrentPageName(pageName);
-    setSidebarOpen(false);
+    // Remove sidebar toggle
+    // setSidebarOpen(false);
     window.scrollTo(0, 0);
   };
 
@@ -87,7 +89,8 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Vertical Page Navigation Sidebar */}
+      {/* Remove the vertical page navigation sidebar */}
+      {/* 
       <div className={`fixed inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} w-64 bg-white border-r shadow-lg transition-transform duration-300 ease-in-out z-50`}>
         <div className="flex justify-between items-center p-4 border-b">
           <span className="font-semibold">Pages</span>
@@ -108,8 +111,10 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
           ))}
         </div>
       </div>
+      */}
 
-      {/* Sidebar Toggle Button */}
+      {/* Remove the sidebar toggle button */}
+      {/*
       <Button
         variant="outline"
         size="icon"
@@ -118,6 +123,7 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
       >
         <ChevronRight className="h-5 w-5" />
       </Button>
+      */}
 
       <Header onPageChange={handlePageChange} currentPage={currentPageName} />
       <main>

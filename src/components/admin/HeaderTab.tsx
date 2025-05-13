@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -74,27 +74,29 @@ export const HeaderTab = () => {
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (headerContent) {
+      const updates = [];
       const siteTitleContent = headerContent.find(item => item.content_type === 'site_title');
       const searchPlaceholderContent = headerContent.find(item => item.content_type === 'search_placeholder');
       const adminButtonContent = headerContent.find(item => item.content_type === 'admin_button_text');
 
-      // Update site title if it exists and has changed
+      // Collect all updates
       if (siteTitleContent && siteTitleContent.content !== formData.siteTitle) {
-        updateMutation.mutate({ id: siteTitleContent.id, content: formData.siteTitle });
+        updates.push({ id: siteTitleContent.id, content: formData.siteTitle });
       }
-
-      // Update search placeholder if it exists and has changed
       if (searchPlaceholderContent && searchPlaceholderContent.content !== formData.searchPlaceholder) {
-        updateMutation.mutate({ id: searchPlaceholderContent.id, content: formData.searchPlaceholder });
+        updates.push({ id: searchPlaceholderContent.id, content: formData.searchPlaceholder });
+      }
+      if (adminButtonContent && adminButtonContent.content !== formData.adminButtonText) {
+        updates.push({ id: adminButtonContent.id, content: formData.adminButtonText });
       }
 
-      // Update admin button text if it exists and has changed
-      if (adminButtonContent && adminButtonContent.content !== formData.adminButtonText) {
-        updateMutation.mutate({ id: adminButtonContent.id, content: formData.adminButtonText });
+      // Process all updates
+      for (const update of updates) {
+        await updateMutation.mutateAsync(update);
       }
     }
   };

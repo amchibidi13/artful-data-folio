@@ -78,33 +78,33 @@ export const FooterTab = () => {
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (footerContent) {
+      const updates = [];
       const companyNameContent = footerContent.find(item => item.content_type === 'company_name');
       const companyDescContent = footerContent.find(item => item.content_type === 'company_description');
       const copyrightContent = footerContent.find(item => item.content_type === 'copyright_text');
       const emailContent = footerContent.find(item => item.content_type === 'contact_email');
 
-      // Update company name if it exists and has changed
+      // Collect all updates
       if (companyNameContent && companyNameContent.content !== formData.companyName) {
-        updateMutation.mutate({ id: companyNameContent.id, content: formData.companyName });
+        updates.push({ id: companyNameContent.id, content: formData.companyName });
       }
-
-      // Update company description if it exists and has changed
       if (companyDescContent && companyDescContent.content !== formData.companyDescription) {
-        updateMutation.mutate({ id: companyDescContent.id, content: formData.companyDescription });
+        updates.push({ id: companyDescContent.id, content: formData.companyDescription });
       }
-
-      // Update copyright text if it exists and has changed
       if (copyrightContent && copyrightContent.content !== formData.copyrightText) {
-        updateMutation.mutate({ id: copyrightContent.id, content: formData.copyrightText });
+        updates.push({ id: copyrightContent.id, content: formData.copyrightText });
+      }
+      if (emailContent && emailContent.content !== formData.contactEmail) {
+        updates.push({ id: emailContent.id, content: formData.contactEmail });
       }
 
-      // Update contact email if it exists and has changed
-      if (emailContent && emailContent.content !== formData.contactEmail) {
-        updateMutation.mutate({ id: emailContent.id, content: formData.contactEmail });
+      // Process all updates
+      for (const update of updates) {
+        await updateMutation.mutateAsync(update);
       }
     }
   };
