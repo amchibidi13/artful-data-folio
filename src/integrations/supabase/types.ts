@@ -81,6 +81,57 @@ export type Database = {
         }
         Relationships: []
       }
+      navigation_menu: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_visible: boolean | null
+          label: string
+          link: string
+          page_id: string | null
+          parent_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          label: string
+          link: string
+          page_id?: string | null
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_visible?: boolean | null
+          label?: string
+          link?: string
+          page_id?: string | null
+          parent_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_menu_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navigation_menu_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "navigation_menu"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pages: {
         Row: {
           created_at: string
@@ -196,6 +247,7 @@ export type Database = {
           created_at: string
           display_order: number
           field_type: string | null
+          font_style: Json | null
           id: string
           is_visible: boolean
           section: string
@@ -207,6 +259,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           field_type?: string | null
+          font_style?: Json | null
           id?: string
           is_visible?: boolean
           section: string
@@ -218,6 +271,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           field_type?: string | null
+          font_style?: Json | null
           id?: string
           is_visible?: boolean
           section?: string

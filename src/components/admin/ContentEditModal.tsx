@@ -12,7 +12,7 @@ import * as z from 'zod';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFontStyleOptions } from '@/hooks/useSiteData';
-import { StyledTextEditor } from '@/components/admin/StyledTextEditor';
+import StyledTextEditor from '@/components/admin/StyledTextEditor';
 import {
   Popover,
   PopoverContent,
