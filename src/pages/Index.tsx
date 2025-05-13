@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useSiteConfig, useSiteContent } from '@/hooks/useSiteData';
+import { useSiteConfig, useSiteContent, usePages } from '@/hooks/useSiteData';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import ProjectsSection from '@/components/ProjectsSection';
@@ -20,17 +21,14 @@ interface SectionComponentProps {
 }
 
 const Index: React.FC<IndexProps> = ({ initialPage }) => {
+  const { data: pages } = usePages();
+  const [currentPageName, setCurrentPageName] = useState<string>(initialPage || 'home');
   const { data: allSiteConfig, isLoading } = useSiteConfig();
   const location = useLocation();
-  
-  // Determine which page to show based on path or initialPage
-  const currentPageName = React.useMemo(() => {
-    if (initialPage) {
-      return initialPage;
-    }
-    
-    // Default to home when on root path
-    return 'home';
+
+  useEffect(() => {
+    // Set initial page on component mount
+    setCurrentPageName(initialPage || 'home');
   }, [initialPage]);
   
   // Filter site config for current page
@@ -68,6 +66,12 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
     .sort((a, b) => a.display_order - b.display_order)
     .map(section => section.section_name);
 
+  // Handle page change from navigation
+  const handlePageChange = (pageName: string) => {
+    setCurrentPageName(pageName);
+    window.scrollTo(0, 0);
+  };
+
   useEffect(() => {
     if (siteConfig && orderedSections) {
       console.log(`Available sections for page ${currentPageName}:`, orderedSections);
@@ -76,7 +80,7 @@ const Index: React.FC<IndexProps> = ({ initialPage }) => {
 
   return (
     <div className="min-h-screen">
-      <Header />
+      <Header onPageChange={handlePageChange} currentPage={currentPageName} />
       <main>
         {isLoading ? (
           <>

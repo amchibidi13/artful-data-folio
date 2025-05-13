@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigationItems } from '@/hooks/useSiteData';
 import { usePages } from '@/hooks/useSiteData';
 import { SearchBar } from '@/components/SearchBar';
-import { Menu } from 'lucide-react';
+import { Menu, ChevronDown } from 'lucide-react';
 import { useSiteContent } from '@/hooks/useSiteData';
 import {
   NavigationMenu,
@@ -16,8 +16,19 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const Header = () => {
+interface HeaderProps {
+  onPageChange: (pageName: string) => void;
+  currentPage: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ onPageChange, currentPage }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: navigationItems } = useNavigationItems();
   const { data: pages } = usePages();
@@ -40,62 +51,69 @@ const Header = () => {
       .sort((a, b) => a.display_order - b.display_order)
       .map(page => ({
         label: page.page_name,
-        target: page.page_name.toLowerCase(),
+        pageName: page.page_name,
         type: 'link'
       }));
   }, [pages]);
 
-  const renderNavigationItem = (item: any, index: number) => {
-    if (!item.label) return null;
-    
-    if (item.type === 'button') {
-      return (
-        <Button key={index} variant="default" size="sm" asChild>
-          <Link to={`/${item.target}`}>{item.label}</Link>
-        </Button>
-      );
-    } else if (item.type === 'outline') {
-      return (
-        <Button key={index} variant="outline" size="sm" asChild>
-          <Link to={`/${item.target}`}>{item.label}</Link>
-        </Button>
-      );
-    } else {
-      // Default to link
-      return (
-        <Button key={index} variant="ghost" size="sm" asChild>
-          <Link to={`/${item.target}`}>{item.label}</Link>
-        </Button>
-      );
-    }
-  };
-
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link to="/" className="text-xl font-bold">
-          {siteTitle}
-        </Link>
-        
-        {/* Desktop Navigation Menu */}
-        <div className="hidden md:flex items-center space-x-1">
-          <NavigationMenu>
-            <NavigationMenuList>
-              {menuItems.map((item, index) => (
-                <NavigationMenuItem key={index}>
-                  <Link to={`/${item.target}`} className={navigationMenuTriggerStyle()}>
-                    {item.label}
-                  </Link>
-                </NavigationMenuItem>
-              ))}
-            </NavigationMenuList>
-          </NavigationMenu>
+        <div className="flex items-center space-x-8">
+          <Link to="/" className="text-xl font-bold" onClick={() => onPageChange('home')}>
+            {siteTitle}
+          </Link>
+          
+          {/* Desktop Navigation Menu */}
+          <div className="hidden md:flex items-center">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {menuItems.map((item, index) => (
+                  <NavigationMenuItem key={index}>
+                    <Link 
+                      to="/" 
+                      className={`${navigationMenuTriggerStyle()} ${currentPage === item.pageName.toLowerCase() ? 'bg-accent/50' : ''}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onPageChange(item.pageName.toLowerCase());
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  </NavigationMenuItem>
+                ))}
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
         </div>
         
         <div className="flex items-center space-x-2">
           <div className="hidden md:block w-64">
             <SearchBar />
           </div>
+          
+          {/* Pages Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                Pages <ChevronDown className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-white">
+              {pages && pages
+                .filter(page => page.is_visible && page.page_name !== 'admin')
+                .map((page) => (
+                  <DropdownMenuItem 
+                    key={page.id}
+                    className="cursor-pointer"
+                    onClick={() => onPageChange(page.page_name.toLowerCase())}
+                  >
+                    {page.page_name}
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <Button variant="outline" size="sm" asChild>
             <Link to="/admin">Admin</Link>
           </Button>
@@ -119,9 +137,13 @@ const Header = () => {
             {menuItems.map((item, index) => (
               <Link 
                 key={index} 
-                to={`/${item.target}`}
-                className="px-4 py-2 text-sm hover:bg-gray-100 rounded-md"
-                onClick={() => setMobileMenuOpen(false)}
+                to="/"
+                className={`px-4 py-2 text-sm hover:bg-gray-100 rounded-md ${currentPage === item.pageName.toLowerCase() ? 'bg-accent/50' : ''}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onPageChange(item.pageName.toLowerCase());
+                  setMobileMenuOpen(false);
+                }}
               >
                 {item.label}
               </Link>

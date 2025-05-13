@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,15 @@ export const PageTab = ({
     },
     enabled: !!selectedPage,
   });
+
+  // Initialize selectedPage to 'home' if it's empty
+  useEffect(() => {
+    if (!selectedPage && pages && pages.length > 0) {
+      // Find the home page or use the first page
+      const homePage = pages.find(p => p.page_name.toLowerCase() === 'home');
+      setSelectedPage(homePage ? homePage.page_name : pages[0].page_name);
+    }
+  }, [pages, selectedPage, setSelectedPage]);
 
   const handleAdd = () => {
     onEdit('section', { page: selectedPage });
@@ -110,7 +119,7 @@ export const PageTab = ({
       <div className="flex justify-between items-center">
         <div className="flex-1">
           <label className="text-sm font-medium mb-2 block">Select Page</label>
-          <Select value={selectedPage} onValueChange={setSelectedPage}>
+          <Select value={selectedPage || ""} onValueChange={setSelectedPage}>
             <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Select page" />
             </SelectTrigger>

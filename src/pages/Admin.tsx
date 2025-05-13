@@ -12,12 +12,13 @@ import { SiteConfigInsert, SiteContentInsert, NavigationItemInsert } from '@/typ
 import DeleteConfirmDialog from '@/components/admin/DeleteConfirmDialog';
 import { AdminProvider } from '@/context/AdminContext';
 
-// Import our new components
+// Import our components
 import SiteTab from '@/components/admin/SiteTab';
 import PageTab from '@/components/admin/PageTab';
 import SectionTab from '@/components/admin/SectionTab';
 import SiteMapTab from '@/components/admin/SiteMapTab';
 import HelpTab from '@/components/admin/HelpTab';
+import NavigationMenuTab from '@/components/admin/NavigationMenuTab';
 import PageEditModal from '@/components/admin/PageEditModal';
 import SectionEditModal from '@/components/admin/SectionEditModal';
 import ContentEditModal from '@/components/admin/ContentEditModal';
@@ -146,6 +147,7 @@ const Admin: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pages'] });
       queryClient.invalidateQueries({ queryKey: ['site-structure'] });
+      queryClient.invalidateQueries({ queryKey: ['navigation_menu'] });
       toast({
         title: currentItem?.id ? "Page Updated" : "Page Added",
         description: `Successfully ${currentItem?.id ? "updated" : "added"} page.`,
@@ -389,10 +391,11 @@ const Admin: React.FC = () => {
         </div>
         
         <Tabs defaultValue="site" className="w-full">
-          <TabsList className="grid grid-cols-5 mb-8">
-            <TabsTrigger value="site">Site</TabsTrigger>
-            <TabsTrigger value="page">Page</TabsTrigger>
-            <TabsTrigger value="section">Section</TabsTrigger>
+          <TabsList className="grid grid-cols-6 mb-8">
+            <TabsTrigger value="site">Pages</TabsTrigger>
+            <TabsTrigger value="navigation">Navigation</TabsTrigger>
+            <TabsTrigger value="page">Sections</TabsTrigger>
+            <TabsTrigger value="section">Content</TabsTrigger>
             <TabsTrigger value="sitemap">SiteMap</TabsTrigger>
             <TabsTrigger value="help">Help</TabsTrigger>
           </TabsList>
@@ -401,7 +404,7 @@ const Admin: React.FC = () => {
           <TabsContent value="site" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Site</CardTitle>
+                <CardTitle>Website Pages</CardTitle>
                 <CardDescription>
                   Manage website pages
                 </CardDescription>
@@ -415,11 +418,26 @@ const Admin: React.FC = () => {
             </Card>
           </TabsContent>
           
+          {/* Navigation Tab - Manage Navigation Menu */}
+          <TabsContent value="navigation" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Navigation Menu</CardTitle>
+                <CardDescription>
+                  Manage the navigation menu structure
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NavigationMenuTab />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
           {/* Page Tab - Manage Sections */}
           <TabsContent value="page" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Page</CardTitle>
+                <CardTitle>Page Sections</CardTitle>
                 <CardDescription>
                   Manage sections for each page
                 </CardDescription>
@@ -437,7 +455,7 @@ const Admin: React.FC = () => {
           <TabsContent value="section" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Section</CardTitle>
+                <CardTitle>Section Content</CardTitle>
                 <CardDescription>
                   Manage content for each section
                 </CardDescription>

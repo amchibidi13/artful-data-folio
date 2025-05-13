@@ -63,6 +63,15 @@ export const SectionTab = ({
     enabled: !!selectedSection,
   });
 
+  // Initialize selectedPage to 'home' if it's empty
+  useEffect(() => {
+    if (!selectedPage && pages && pages.length > 0) {
+      // Find the home page or use the first page
+      const homePage = pages.find(p => p.page_name.toLowerCase() === 'home');
+      setSelectedPage(homePage ? homePage.page_name : pages[0].page_name);
+    }
+  }, [pages, selectedPage, setSelectedPage]);
+
   useEffect(() => {
     // Reset selected section when page changes
     if (selectedPage && sections && sections.length > 0) {
@@ -70,7 +79,8 @@ export const SectionTab = ({
       if (firstSection && (!selectedSection || !sections.some(s => s.section_name === selectedSection))) {
         setSelectedSection(firstSection);
       }
-    } else {
+    } else if (selectedPage && (!sections || sections.length === 0)) {
+      // Clear selected section if there are no sections for the page
       setSelectedSection('');
     }
   }, [selectedPage, sections, setSelectedSection, selectedSection]);
@@ -128,7 +138,10 @@ export const SectionTab = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium mb-2 block">Select Page</label>
-          <Select value={selectedPage} onValueChange={setSelectedPage}>
+          <Select 
+            value={selectedPage} 
+            onValueChange={setSelectedPage}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select page" />
             </SelectTrigger>
@@ -152,7 +165,11 @@ export const SectionTab = ({
         
         <div>
           <label className="text-sm font-medium mb-2 block">Select Section</label>
-          <Select value={selectedSection} onValueChange={setSelectedSection} disabled={!selectedPage || sectionsLoading || (sections && sections.length === 0)}>
+          <Select 
+            value={selectedSection || ""} 
+            onValueChange={setSelectedSection} 
+            disabled={!selectedPage || sectionsLoading || (sections && sections.length === 0)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder={!selectedPage ? "Select page first" : "Select section"} />
             </SelectTrigger>

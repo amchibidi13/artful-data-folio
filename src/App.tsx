@@ -19,7 +19,7 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Index />,
+    element: <Index initialPage="home" />,
   },
   {
     path: '/admin',
@@ -28,22 +28,6 @@ const router = createBrowserRouter([
   {
     path: '/search',
     element: <SearchResults />,
-  },
-  {
-    path: '/home',
-    element: <Index initialPage="home" />,
-  },
-  {
-    path: '/about',
-    element: <Index initialPage="about" />,
-  },
-  {
-    path: '/projects',
-    element: <Index initialPage="projects" />,
-  },
-  {
-    path: '/contact',
-    element: <Index initialPage="contact" />,
   },
   {
     path: '*',
