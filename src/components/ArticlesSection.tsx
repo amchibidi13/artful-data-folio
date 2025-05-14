@@ -10,11 +10,10 @@ const ArticlesSection: React.FC = () => {
   const { data: articles, isLoading, error } = useQuery({
     queryKey: ['articles'],
     queryFn: async () => {
-      // Explicitly type the response using "any" to avoid TypeScript errors
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .order('date', { ascending: false }) as any;
+        .order('date', { ascending: false }); // Newest first for display
       
       if (error) throw error;
       return data as Article[];

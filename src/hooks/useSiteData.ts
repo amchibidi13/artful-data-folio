@@ -485,16 +485,60 @@ export const useSearchContent = (query: string) => {
     queryFn: async () => {
       if (!query.trim()) return [];
       
-      // Use direct content search since we had issues with the search_index table
-      const { data, error } = await supabase
+      // First search site_content
+      const { data: contentData, error: contentError } = await supabase
         .from('site_content')
         .select('*')
         .filter('include_in_global_search', 'eq', true)
         .ilike('content', `%${query}%`)
         .limit(20);
       
-      if (error) throw error;
-      return data || [];
+      if (contentError) throw contentError;
+      
+      // Then search articles
+      const { data: articlesData, error: articlesError } = await supabase
+        .from('articles')
+        .select('*')
+        .or(`title.ilike.%${query}%,content.ilike.%${query}%,excerpt.ilike.%${query}%`)
+        .limit(20);
+      
+      if (articlesError) throw articlesError;
+      
+      // Then search projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+        .limit(20);
+      
+      if (projectsError) throw projectsError;
+      
+      // Format article results to match the expected structure
+      const formattedArticles = (articlesData || []).map(article => ({
+        id: `article-${article.id}`,
+        content_id: article.id,
+        section: 'articles',
+        page: 'articles',
+        field_type: 'article',
+        content: article.content,
+        title: article.title,
+        excerpt: article.excerpt,
+        is_article: true
+      }));
+      
+      // Format project results to match the expected structure
+      const formattedProjects = (projectsData || []).map(project => ({
+        id: `project-${project.id}`,
+        content_id: project.id,
+        section: 'projects',
+        page: 'projects',
+        field_type: 'project',
+        content: project.description,
+        title: project.title,
+        is_project: true
+      }));
+      
+      return [...(contentData || []), ...formattedArticles, ...formattedProjects];
     },
     enabled: !!query.trim(),
   });

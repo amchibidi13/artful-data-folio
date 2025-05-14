@@ -1,24 +1,24 @@
 
 export interface Project {
   id: string;
+  created_at: string;
   title: string;
   description: string;
-  image_url: string;
+  image_url?: string;
   tags: string[];
-  link: string | null;
-  created_at: string;
-  updated_at: string;
+  link?: string;
+  // Remove display_order
 }
 
 export interface Article {
   id: string;
   title: string;
+  category: string;
   excerpt: string;
   content: string;
-  date: string;
+  image_url?: string;
   read_time: number;
-  category: string;
-  link: string | null;
-  created_at: string;
-  updated_at: string;
+  date: string;
+  link?: string;
+  // Remove display_order
 }

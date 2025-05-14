@@ -1,27 +1,42 @@
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Trash, Plus, ArrowUp, ArrowDown } from 'lucide-react';
-import { useAdmin } from '@/context/AdminContext';
-import { SiteContent } from '@/types/database-types';
-import { getFieldInputType } from '@/hooks/useSiteData';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
 
-export const SectionTab = ({
-  onEdit,
-  onDelete,
-  onReorder
-}: {
-  onEdit: (type: 'content', item: any) => void,
-  onDelete: (type: 'content', item: any) => void,
-  onReorder: (type: 'content', id: string, currentOrder: number, direction: 'up' | 'down') => void
-}) => {
-  const { selectedPage, setSelectedPage, selectedSection, setSelectedSection } = useAdmin();
-  
+// Import necessary types
+type ItemType = 'content' | 'project' | 'article';
+
+interface SectionTabProps {
+  onEdit: (type: ItemType, item: any) => void;
+  onDelete: (type: ItemType, item: any) => void;
+  onReorder: (type: ItemType, id: string, currentOrder: number, direction: 'up' | 'down') => void;
+}
+
+export const SectionTab: React.FC<SectionTabProps> = ({ onEdit, onDelete, onReorder }) => {
+  const [selectedPage, setSelectedPage] = useState<string>('home');
+  const [selectedSection, setSelectedSection] = useState<string>('');
+
+  // Query for pages
   const { data: pages, isLoading: pagesLoading } = useQuery({
     queryKey: ['pages'],
     queryFn: async () => {
@@ -34,9 +49,10 @@ export const SectionTab = ({
       return data;
     },
   });
-  
+
+  // Query for sections based on selected page
   const { data: sections, isLoading: sectionsLoading } = useQuery({
-    queryKey: ['admin-sections-for-dropdown', selectedPage],
+    queryKey: ['sections', selectedPage],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('site_config')
@@ -49,26 +65,64 @@ export const SectionTab = ({
     },
     enabled: !!selectedPage,
   });
-  
-  const { data: contentItems, isLoading: contentLoading } = useQuery({
-    queryKey: ['admin-content', selectedSection],
+
+  // Query for projects when projects section is selected
+  const { data: projectsData, isLoading: projectsLoading } = useQuery({
+    queryKey: ['admin-projects'],
     queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false }); // Newest first for display
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: selectedSection?.toLowerCase() === 'projects',
+  });
+
+  // Query for articles when articles section is selected
+  const { data: articlesData, isLoading: articlesLoading } = useQuery({
+    queryKey: ['admin-articles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .order('date', { ascending: false }); // Newest first for display
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: selectedSection?.toLowerCase() === 'articles',
+  });
+
+  // Query for regular content based on selected section
+  const { data: contentItems, isLoading: contentLoading } = useQuery({
+    queryKey: ['content', selectedSection],
+    queryFn: async () => {
+      if (!selectedSection) return [];
+      
       const { data, error } = await supabase
         .from('site_content')
         .select('*')
         .eq('section', selectedSection)
         .order('display_order', { ascending: true });
       
-      if (error) throw error;
-      return data as SiteContent[];
+      if (error) {
+        console.error("Error fetching content:", error);
+        throw error;
+      }
+      
+      return data;
     },
-    enabled: !!selectedSection,
+    enabled: !!selectedSection && 
+      selectedSection.toLowerCase() !== 'projects' && 
+      selectedSection.toLowerCase() !== 'articles',
   });
 
-  // Initialize selectedPage to 'home' if it's empty
+  // Set initial page when data loads
   useEffect(() => {
-    if ((!selectedPage || selectedPage === '') && pages && pages.length > 0) {
-      // Find the home page or use the first page
+    if (pages && pages.length > 0 && !selectedPage) {
       const homePage = pages.find(p => p.page_name.toLowerCase() === 'home');
       if (homePage) {
         setSelectedPage(homePage.page_name);
@@ -76,89 +130,292 @@ export const SectionTab = ({
         setSelectedPage(pages[0].page_name);
       }
     }
-  }, [pages, selectedPage, setSelectedPage]);
+  }, [pages, selectedPage]);
 
+  // Set initial section when sections load
   useEffect(() => {
-    // Reset selected section when page changes
-    if (selectedPage && sections && sections.length > 0) {
-      const firstSection = sections[0].section_name;
-      if (firstSection && (!selectedSection || !sections.some(s => s.section_name === selectedSection))) {
-        setSelectedSection(firstSection);
-      }
-    } else if (selectedPage && (!sections || sections.length === 0)) {
-      // Clear selected section if there are no sections for the page
-      setSelectedSection('');
+    if (sections && sections.length > 0 && !selectedSection) {
+      setSelectedSection(sections[0].section_name);
     }
-  }, [selectedPage, sections, setSelectedSection, selectedSection]);
+  }, [sections, selectedSection]);
 
+  // Handle page selection
+  const handlePageSelect = (pageName: string) => {
+    setSelectedPage(pageName);
+    setSelectedSection(''); // Reset section when page changes
+  };
+
+  // Handle section selection
+  const handleSectionSelect = (sectionName: string) => {
+    setSelectedSection(sectionName);
+  };
+  
+  // Handle edit based on section type
+  const handleEdit = (item: any) => {
+    const sectionLower = selectedSection.toLowerCase();
+    if (sectionLower === 'projects') {
+      onEdit('project', item);
+    } else if (sectionLower === 'articles') {
+      onEdit('article', item);
+    } else {
+      onEdit('content', item);
+    }
+  };
+  
+  // Handle delete based on section type
+  const handleDelete = (item: any) => {
+    const sectionLower = selectedSection.toLowerCase();
+    if (sectionLower === 'projects') {
+      onDelete('project', item);
+    } else if (sectionLower === 'articles') {
+      onDelete('article', item);
+    } else {
+      onDelete('content', item);
+    }
+  };
+  
+  // Handle add based on section type
   const handleAdd = () => {
-    onEdit('content', { section: selectedSection });
-  };
-
-  const handleEdit = (content: SiteContent) => {
-    onEdit('content', content);
-  };
-
-  const handleDelete = (content: SiteContent) => {
-    onDelete('content', content);
-  };
-
-  const handleReorder = (content: SiteContent, direction: 'up' | 'down') => {
-    onReorder('content', content.id, content.display_order, direction);
-  };
-
-  const getInputTypeLabel = (fieldType: string) => {
-    const inputType = getFieldInputType(fieldType);
-    switch (inputType) {
-      case 'text':
-        return 'Text';
-      case 'textarea':
-        return 'Long Text';
-      case 'rich_text':
-        return 'Rich Text';
-      case 'image':
-        return 'Image URL';
-      case 'url':
-        return 'URL';
-      case 'list':
-        return 'List';
-      case 'json':
-        return 'JSON';
-      case 'date':
-        return 'Date';
-      case 'email':
-        return 'Email';
-      case 'password':
-        return 'Password';
-      case 'color':
-        return 'Color';
-      default:
-        return 'Text';
+    const sectionLower = selectedSection.toLowerCase();
+    if (sectionLower === 'projects') {
+      onEdit('project', {});
+    } else if (sectionLower === 'articles') {
+      onEdit('article', {});
+    } else {
+      onEdit('content', { section: selectedSection });
     }
   };
 
-  // Process page list to ensure the home page is included
+  // Handle reordering based on section type
+  const handleReorder = (item: any, direction: 'up' | 'down') => {
+    const sectionLower = selectedSection.toLowerCase();
+    onReorder(
+      sectionLower === 'projects' ? 'project' : 
+      sectionLower === 'articles' ? 'article' : 'content', 
+      item.id, 
+      item.display_order || 0, // Use 0 as default if display_order is not set
+      direction
+    );
+  };
+
+  // Helper function to get input type label
+  const getInputTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      text: 'Text',
+      textarea: 'Text Area',
+      rich_text: 'Rich Text',
+      image: 'Image',
+      video: 'Video',
+      link: 'Link',
+      button: 'Button',
+      heading: 'Heading',
+      subheading: 'Subheading',
+      paragraph: 'Paragraph',
+    };
+    
+    return typeMap[type] || type;
+  };
+  
+  // Process page list to ensure all pages are included
   const pagesList = React.useMemo(() => {
     if (!pages) return [];
     return pages.filter(page => page.page_name !== 'admin');
   }, [pages]);
 
-  const handleSelectPage = (value: string) => {
-    if (value) {
-      setSelectedPage(value);
-      // Reset section selection when page changes
-      setSelectedSection('');
-    }
+  // Determine if we're loading content based on the section type
+  const isLoadingContent = () => {
+    const sectionLower = selectedSection?.toLowerCase();
+    if (sectionLower === 'projects') return projectsLoading;
+    if (sectionLower === 'articles') return articlesLoading;
+    return contentLoading;
   };
 
+  // Get the appropriate content items based on section type
+  const getContentItems = () => {
+    const sectionLower = selectedSection?.toLowerCase();
+    if (sectionLower === 'projects') return projectsData || [];
+    if (sectionLower === 'articles') return articlesData || [];
+    return contentItems || [];
+  };
+  
+  // Render table rows based on section type
+  const renderTableRows = () => {
+    const items = getContentItems();
+    const loading = isLoadingContent();
+    const sectionLower = selectedSection?.toLowerCase();
+    
+    if (loading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={6}>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+    
+    if (items.length === 0) {
+      return (
+        <TableRow>
+          <TableCell colSpan={6} className="text-center">
+            {selectedSection 
+              ? `No items found for ${selectedSection} section` 
+              : 'Please select a page and section'}
+          </TableCell>
+        </TableRow>
+      );
+    }
+    
+    if (sectionLower === 'projects') {
+      return items.map((project: any, index: number) => (
+        <TableRow key={project.id}>
+          <TableCell>
+            {new Date(project.created_at).toLocaleDateString()}
+          </TableCell>
+          <TableCell>{project.title}</TableCell>
+          <TableCell>Project</TableCell>
+          <TableCell>Visible</TableCell>
+          <TableCell>Yes</TableCell>
+          <TableCell className="space-x-1">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleReorder(project, 'up')}
+              disabled={index === 0} // Disable if it's the first item
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleReorder(project, 'down')}
+              disabled={index === items.length - 1} // Disable if it's the last item
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleEdit(project)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleDelete(project)}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </TableCell>
+        </TableRow>
+      ));
+    }
+    
+    if (sectionLower === 'articles') {
+      return items.map((article: any, index: number) => (
+        <TableRow key={article.id}>
+          <TableCell>
+            {new Date(article.date).toLocaleDateString()}
+          </TableCell>
+          <TableCell>{article.title}</TableCell>
+          <TableCell>Article</TableCell>
+          <TableCell>Visible</TableCell>
+          <TableCell>Yes</TableCell>
+          <TableCell className="space-x-1">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleReorder(article, 'up')}
+              disabled={index === 0} // Disable if it's the first item
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleReorder(article, 'down')}
+              disabled={index === items.length - 1} // Disable if it's the last item
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleEdit(article)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleDelete(article)}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </TableCell>
+        </TableRow>
+      ));
+    }
+    
+    // Regular content items
+    return items
+      .filter((content: any) => !content.content_type?.endsWith('_style'))
+      .map((content: any) => (
+        <TableRow key={content.id}>
+          <TableCell>{content.display_order}</TableCell>
+          <TableCell>{content.content_type}</TableCell>
+          <TableCell>
+            {getInputTypeLabel(content.field_type || content.content_type)}
+          </TableCell>
+          <TableCell>{content.is_visible ? 'Visible' : 'Hidden'}</TableCell>
+          <TableCell>{content.include_in_global_search ? 'Yes' : 'No'}</TableCell>
+          <TableCell className="space-x-1">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleReorder(content, 'up')}
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleReorder(content, 'down')}
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleEdit(content)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleDelete(content)}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </TableCell>
+        </TableRow>
+      ));
+  };
+  
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="text-sm font-medium mb-2 block">Select Page</label>
           <Select 
-            value={selectedPage || ""} 
-            onValueChange={handleSelectPage}
+            value={selectedPage} 
+            onValueChange={handlePageSelect}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select page" />
@@ -184,12 +441,12 @@ export const SectionTab = ({
         <div>
           <label className="text-sm font-medium mb-2 block">Select Section</label>
           <Select 
-            value={selectedSection || ""} 
-            onValueChange={setSelectedSection} 
-            disabled={!selectedPage || sectionsLoading || (sections && sections.length === 0)}
+            value={selectedSection} 
+            onValueChange={handleSectionSelect}
+            disabled={!selectedPage || sectionsLoading}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder={!selectedPage ? "Select page first" : "Select section"} />
+              <SelectValue placeholder="Select section" />
             </SelectTrigger>
             <SelectContent>
               {sectionsLoading ? (
@@ -211,91 +468,39 @@ export const SectionTab = ({
       </div>
       
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Content Fields</h2>
-        <Button onClick={handleAdd} disabled={!selectedSection}>
-          <Plus className="mr-2 h-4 w-4" /> Add Field
-        </Button>
+        <h3 className="text-lg font-medium">
+          {selectedSection ? `${selectedSection} Content` : 'Select a page and section'}
+        </h3>
+        {selectedSection && (
+          <Button onClick={handleAdd} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add {selectedSection?.toLowerCase() === 'projects' ? 'Project' : 
+                 selectedSection?.toLowerCase() === 'articles' ? 'Article' : 'Content'}
+          </Button>
+        )}
       </div>
       
       <Table>
         <TableCaption>
           {selectedSection 
-            ? `Content fields for ${selectedSection} section` 
-            : 'Please select a section to view content fields'
-          }
+            ? `Content for ${selectedSection} section` 
+            : 'Please select a section to view content'}
         </TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead>Display Order</TableHead>
-            <TableHead>Field Type</TableHead>
-            <TableHead>Input Type</TableHead>
-            <TableHead>Visibility</TableHead>
-            <TableHead>In Search</TableHead>
+            <TableHead>
+              {selectedSection?.toLowerCase() === 'projects' ? 'Created Date' : 
+               selectedSection?.toLowerCase() === 'articles' ? 'Published Date' : 'Order'}
+            </TableHead>
+            <TableHead>{selectedSection?.toLowerCase() === 'projects' || selectedSection?.toLowerCase() === 'articles' ? 'Title' : 'Content Type'}</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Visible</TableHead>
+            <TableHead>{selectedSection?.toLowerCase() === 'articles' ? 'Searchable' : 'In Search'}</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {contentLoading ? (
-            <TableRow>
-              <TableCell colSpan={6}>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : contentItems && contentItems.length > 0 ? (
-            contentItems
-              .filter(content => !content.content_type.endsWith('_style'))
-              .map((content) => (
-                <TableRow key={content.id}>
-                  <TableCell>{content.display_order}</TableCell>
-                  <TableCell>{content.field_type || content.content_type}</TableCell>
-                  <TableCell>
-                    {getInputTypeLabel(content.field_type || content.content_type)}
-                  </TableCell>
-                  <TableCell>{content.is_visible ? 'Visible' : 'Hidden'}</TableCell>
-                  <TableCell>{content.include_in_global_search ? 'Yes' : 'No'}</TableCell>
-                  <TableCell className="space-x-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleReorder(content, 'up')}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleReorder(content, 'down')}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleEdit(content)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleDelete(content)}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center">
-                {selectedSection ? 'No content fields found for this section' : 'Please select a section'}
-              </TableCell>
-            </TableRow>
-          )}
+          {renderTableRows()}
         </TableBody>
       </Table>
     </div>

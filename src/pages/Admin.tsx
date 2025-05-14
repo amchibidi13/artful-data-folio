@@ -25,13 +25,15 @@ import ContentEditModal from '@/components/admin/ContentEditModal';
 import HeaderTab from '@/components/admin/HeaderTab';
 import FooterTab from '@/components/admin/FooterTab';
 import ThemesTab from '@/components/admin/ThemesTab';
+import ProjectEditModal from '@/components/admin/ProjectEditModal';
+import ArticleEditModal from '@/components/admin/ArticleEditModal';
 
 // Table name type to ensure we only use valid table names
 type TableName = 'site_config' | 'site_content' | 'navigation' | 'projects' | 'articles' | 'pages';
 type ItemType = 'page' | 'section' | 'content' | 'navigation' | 'project' | 'article';
 
 // Map item types to table names
-const getTableName = (itemType: ItemType): TableName => {
+const getTableName = (itemType: ItemType) => {
   switch (itemType) {
     case 'page':
       return 'pages';
@@ -39,14 +41,12 @@ const getTableName = (itemType: ItemType): TableName => {
       return 'site_config';
     case 'content':
       return 'site_content';
-    case 'navigation':
-      return 'navigation';
     case 'project':
       return 'projects';
     case 'article':
       return 'articles';
     default:
-      throw new Error('Invalid item type');
+      return '';
   }
 };
 
@@ -60,6 +60,8 @@ const Admin: React.FC = () => {
   const [pageModalOpen, setPageModalOpen] = useState(false);
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
   const [contentModalOpen, setContentModalOpen] = useState(false);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [articleModalOpen, setArticleModalOpen] = useState(false);
   
   const [currentItemType, setCurrentItemType] = useState<ItemType>('page');
   const [currentItem, setCurrentItem] = useState<any>(null);
@@ -251,17 +253,115 @@ const Admin: React.FC = () => {
     }
   });
 
-  // Mutations for reordering items (sections and content)
+  // Completely rewrite the reorderMutation for projects and articles
   const reorderMutation = useMutation({
-    mutationFn: async ({ itemType, id, newOrder }: { itemType: ItemType, id: string, newOrder: number }) => {
+    mutationFn: async ({ itemType, id, direction }: { 
+      itemType: ItemType, 
+      id: string, 
+      direction: 'up' | 'down' 
+    }) => {
       const tableName = getTableName(itemType);
       
-      const { error } = await supabase
-        .from(tableName)
-        .update({ display_order: newOrder })
-        .eq('id', id);
-      
-      if (error) throw error;
+      // For projects and articles, we'll use a different approach
+      if (itemType === 'project' || itemType === 'article') {
+        // Determine which field to use for ordering
+        const orderField = itemType === 'article' ? 'date' : 'created_at';
+        
+        // Get all items sorted by the order field (newest first - this is how they appear in the UI)
+        const { data: allItems, error: fetchError } = await supabase
+          .from(tableName)
+          .select('*')
+          .order(orderField, { ascending: false });
+        
+        if (fetchError) throw fetchError;
+        if (!allItems || allItems.length === 0) throw new Error('No items found');
+        
+        // Find the current item's index in the sorted array
+        const currentIndex = allItems.findIndex(item => item.id === id);
+        if (currentIndex === -1) throw new Error('Item not found');
+        
+        // Calculate the target index based on the direction
+        // For "up", we want to move the item toward the top of the list (lower index)
+        // For "down", we want to move the item toward the bottom of the list (higher index)
+        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        
+        // Check if the move is valid
+        if (targetIndex < 0 || targetIndex >= allItems.length) {
+          throw new Error(`Cannot move item ${direction}`);
+        }
+        
+        // Get the current and target items
+        const currentItem = allItems[currentIndex];
+        const targetItem = allItems[targetIndex];
+        
+        // Swap the timestamps
+        const currentTimestamp = currentItem[orderField];
+        const targetTimestamp = targetItem[orderField];
+        
+        // Update the current item with the target's timestamp
+        const { error: updateCurrentError } = await supabase
+          .from(tableName)
+          .update({ [orderField]: targetTimestamp })
+          .eq('id', currentItem.id);
+        
+        if (updateCurrentError) throw updateCurrentError;
+        
+        // Update the target item with the current's timestamp
+        const { error: updateTargetError } = await supabase
+          .from(tableName)
+          .update({ [orderField]: currentTimestamp })
+          .eq('id', targetItem.id);
+        
+        if (updateTargetError) throw updateTargetError;
+        
+        return { success: true };
+      } else {
+        // Original logic for other item types that have display_order
+        // Get all items sorted by display_order
+        const { data: allItems, error: fetchError } = await supabase
+          .from(tableName)
+          .select('*')
+          .order('display_order', { ascending: true });
+        
+        if (fetchError) throw fetchError;
+        if (!allItems || allItems.length === 0) throw new Error('No items found');
+        
+        // Find the current item's index
+        const currentIndex = allItems.findIndex(item => item.id === id);
+        if (currentIndex === -1) throw new Error('Item not found');
+        
+        // Calculate the target index based on the direction
+        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+        
+        // Check if the move is valid
+        if (targetIndex < 0 || targetIndex >= allItems.length) {
+          throw new Error(`Cannot move item ${direction}`);
+        }
+        
+        // Get the current and target items
+        const currentItem = allItems[currentIndex];
+        const targetItem = allItems[targetIndex];
+        
+        // Swap the display_order values
+        const currentOrder = currentItem.display_order;
+        const targetOrder = targetItem.display_order;
+        
+        // Update the current item
+        const { error: updateCurrentError } = await supabase
+          .from(tableName)
+          .update({ display_order: targetOrder })
+          .eq('id', currentItem.id);
+        
+        if (updateCurrentError) throw updateCurrentError;
+        
+        // Update the target item
+        const { error: updateTargetError } = await supabase
+          .from(tableName)
+          .update({ display_order: currentOrder })
+          .eq('id', targetItem.id);
+        
+        if (updateTargetError) throw updateTargetError;
+      }
     },
     onSuccess: (_, variables) => {
       // Invalidate queries based on the item type
@@ -276,17 +376,119 @@ const Admin: React.FC = () => {
           queryClient.invalidateQueries({ queryKey: ['admin-content'] });
           queryClient.invalidateQueries({ queryKey: ['site-content'] });
           break;
+        case 'project':
+          queryClient.invalidateQueries({ queryKey: ['projects'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+          break;
+        case 'article':
+          queryClient.invalidateQueries({ queryKey: ['articles'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-articles'] });
+          break;
       }
       
       toast({
         title: "Order Updated",
-        description: "Successfully updated display order",
+        description: "Successfully updated order",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
         description: `Failed to update order: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Add mutations for projects
+  const projectMutation = useMutation({
+    mutationFn: async (data: any) => {
+      // Create a clean copy of the data, removing fields that don't exist in schema
+      const { display_order, include_in_search, is_visible, ...projectData } = data;
+      
+      // Only include image_url if it's provided
+      const cleanData = { ...projectData };
+      if (!cleanData.image_url) {
+        delete cleanData.image_url;
+      }
+      
+      if (data.id) {
+        // Update existing project
+        const { error } = await supabase
+          .from('projects')
+          .update(cleanData)
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new project
+        const { error } = await supabase
+          .from('projects')
+          .insert([cleanData]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast({
+        title: currentItem?.id ? "Project Updated" : "Project Added",
+        description: `Successfully ${currentItem?.id ? "updated" : "added"} project.`,
+      });
+      setProjectModalOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to ${currentItem?.id ? "update" : "add"} project: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Add mutations for articles
+  const articleMutation = useMutation({
+    mutationFn: async (data: any) => {
+      // Create a clean copy of the data without fields that don't exist in the schema
+      const { display_order, include_in_search, is_visible, ...articleData } = data;
+      
+      // Only include image_url if it's provided
+      const cleanData = { ...articleData };
+      if (!cleanData.image_url) {
+        delete cleanData.image_url;
+      }
+      
+      if (data.id) {
+        // Update existing article
+        const { error } = await supabase
+          .from('articles')
+          .update(cleanData)
+          .eq('id', data.id);
+        
+        if (error) throw error;
+      } else {
+        // Add new article
+        const { error } = await supabase
+          .from('articles')
+          .insert([cleanData]);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-articles'] });
+      queryClient.invalidateQueries({ queryKey: ['articles'] });
+      toast({
+        title: currentItem?.id ? "Article Updated" : "Article Added",
+        description: `Successfully ${currentItem?.id ? "updated" : "added"} article.`,
+      });
+      setArticleModalOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to ${currentItem?.id ? "update" : "add"} article: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -322,11 +524,11 @@ const Admin: React.FC = () => {
   };
 
   // Open modal for editing items
-  const handleEdit = (itemType: ItemType, item: any) => {
-    setCurrentItemType(itemType);
+  const handleEdit = (type: ItemType, item: any) => {
+    setCurrentItemType(type);
     setCurrentItem(item);
     
-    switch (itemType) {
+    switch (type) {
       case 'page':
         setPageModalOpen(true);
         break;
@@ -336,7 +538,12 @@ const Admin: React.FC = () => {
       case 'content':
         setContentModalOpen(true);
         break;
-      // Add more cases as needed
+      case 'project':
+        setProjectModalOpen(true);
+        break;
+      case 'article':
+        setArticleModalOpen(true);
+        break;
     }
   };
   
@@ -368,7 +575,12 @@ const Admin: React.FC = () => {
         case 'content':
           contentMutation.mutate(data);
           break;
-        // Add more cases as needed
+        case 'project':
+          projectMutation.mutate(data);
+          break;
+        case 'article':
+          articleMutation.mutate(data);
+          break;
       }
     } catch (error: any) {
       toast({
@@ -381,11 +593,7 @@ const Admin: React.FC = () => {
 
   // Handle reordering items
   const handleReorder = (itemType: ItemType, id: string, currentOrder: number, direction: 'up' | 'down') => {
-    const newOrder = direction === 'up' ? currentOrder - 1 : currentOrder + 1;
-    
-    if (newOrder >= 0) {
-      reorderMutation.mutate({ itemType, id, newOrder });
-    }
+    reorderMutation.mutate({ itemType, id, direction });
   };
 
   if (!isAuthenticated) {
@@ -581,6 +789,20 @@ const Admin: React.FC = () => {
         <ContentEditModal
           isOpen={contentModalOpen}
           onClose={() => setContentModalOpen(false)}
+          itemData={currentItem}
+          onSubmit={handleSubmit}
+        />
+
+        <ProjectEditModal
+          isOpen={projectModalOpen}
+          onClose={() => setProjectModalOpen(false)}
+          itemData={currentItem}
+          onSubmit={handleSubmit}
+        />
+
+        <ArticleEditModal
+          isOpen={articleModalOpen}
+          onClose={() => setArticleModalOpen(false)}
           itemData={currentItem}
           onSubmit={handleSubmit}
         />

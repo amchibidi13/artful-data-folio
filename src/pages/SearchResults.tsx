@@ -14,6 +14,11 @@ interface SearchResult {
   page: string;
   field_type: string;
   content: string;
+  type: 'content' | 'article' | 'project';
+  title?: string;
+  date?: string;
+  category?: string;
+  tags?: string | string[];
 }
 
 const SearchResults = () => {
@@ -32,7 +37,7 @@ const SearchResults = () => {
     setLoading(true);
     try {
       // First approach: Direct search in site_content table
-      const { data, error } = await supabase
+      const { data: contentData, error: contentError } = await supabase
         .from('site_content')
         .select('id, section, content, field_type, content_type')
         .filter('include_in_global_search', 'eq', true)
@@ -41,29 +46,71 @@ const SearchResults = () => {
           config: 'english'
         });
       
-      if (error) throw error;
+      if (contentError) throw contentError;
       
-      if (data) {
-        // Get section details to determine the page
-        const sectionsData = await Promise.all(data.map(async (item) => {
-          const { data: sectionData } = await supabase
-            .from('site_config')
-            .select('page')
-            .eq('section_name', item.section)
-            .single();
-          
-          return {
-            id: item.id,
-            content_id: item.id,
-            section: item.section,
-            page: sectionData?.page || 'unknown',
-            field_type: item.field_type || item.content_type,
-            content: item.content,
-          };
-        }));
+      // Also search in articles
+      const { data: articlesData, error: articlesError } = await supabase
+        .from('articles')
+        .select('id, title, excerpt, content, category, date')
+        .or(`title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,excerpt.ilike.%${searchTerm}%`);
         
-        setResults(sectionsData);
-      }
+      if (articlesError) throw articlesError;
+      
+      // Also search in projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, title, description, tags')
+        .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+        
+      if (projectsError) throw projectsError;
+      
+      // Process content results
+      const contentResults = await Promise.all((contentData || []).map(async (item) => {
+        const { data: sectionData } = await supabase
+          .from('site_config')
+          .select('page')
+          .eq('section_name', item.section)
+          .single();
+        
+        return {
+          id: item.id,
+          content_id: item.id,
+          section: item.section,
+          page: sectionData?.page || 'unknown',
+          field_type: item.field_type || item.content_type,
+          content: item.content,
+          type: 'content'
+        };
+      }));
+      
+      // Process article results
+      const articleResults = (articlesData || []).map(article => ({
+        id: `article-${article.id}`,
+        content_id: article.id,
+        section: 'Articles',
+        page: 'articles',
+        field_type: 'Article',
+        content: article.content || article.excerpt,
+        title: article.title,
+        date: article.date,
+        category: article.category,
+        type: 'article'
+      }));
+      
+      // Process project results
+      const projectResults = (projectsData || []).map(project => ({
+        id: `project-${project.id}`,
+        content_id: project.id,
+        section: 'Projects',
+        page: 'projects',
+        field_type: 'Project',
+        content: project.description,
+        title: project.title,
+        tags: project.tags,
+        type: 'project'
+      }));
+      
+      setResults([...contentResults, ...articleResults, ...projectResults]);
     } catch (error) {
       console.error('Search error:', error);
       setResults([]);
@@ -169,19 +216,41 @@ const SearchResults = () => {
             <Card key={result.id}>
               <CardHeader className="pb-2">
                 <CardDescription>
-                  {result.page} / {result.section} / {result.field_type}
+                  {result.type === 'article' ? 'Article' : 
+                   result.type === 'project' ? 'Project' : 
+                   `${result.page} / ${result.section} / ${result.field_type}`}
                 </CardDescription>
                 <CardTitle className="text-lg">
-                  {highlightText(result.field_type.replace(/_/g, ' '), query)}
+                  {result.type === 'article' || result.type === 'project' 
+                    ? highlightText(result.title, query)
+                    : highlightText(result.field_type.replace(/_/g, ' '), query)}
                 </CardTitle>
+                {result.type === 'article' && (
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(result.date).toLocaleDateString()} • {result.category}
+                  </div>
+                )}
+                {result.type === 'project' && result.tags && (
+                  <div className="text-sm text-muted-foreground">
+                    {Array.isArray(result.tags) ? result.tags.join(', ') : result.tags}
+                  </div>
+                )}
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-700">
                   {highlightText(truncateContent(result.content, query), query)}
                 </p>
                 <Button variant="link" size="sm" asChild className="mt-2 p-0">
-                  <Link to={`/${result.page}`}>
-                    View on {result.page} page
+                  <Link to={
+                    result.type === 'article' ? `/articles/${result.content_id}` : 
+                    result.type === 'project' ? `/projects/${result.content_id}` : 
+                    `/${result.page}`
+                  }>
+                    View {
+                      result.type === 'article' ? 'article' : 
+                      result.type === 'project' ? 'project' : 
+                      `on ${result.page} page`
+                    }
                   </Link>
                 </Button>
               </CardContent>
