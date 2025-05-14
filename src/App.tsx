@@ -33,7 +33,9 @@ const router = createBrowserRouter([
     path: '*',
     element: <NotFound />,
   },
-]);
+], {
+  basename: '/artful-data-folio'
+});
 
 function App() {
   return (
